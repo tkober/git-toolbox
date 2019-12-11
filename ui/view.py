@@ -53,6 +53,21 @@ class HBox(View):
     def render(self, stdscr, rect):
         super().render(stdscr, rect)
 
+        x_offset = 0
+        for view, padding in self.__elements:
+            x_offset += padding.left
+            required_size = view.required_size()
+
+            if x_offset+required_size.width >= rect.width:
+                break
+
+            y = rect.y + padding.top
+            x = rect.x + x_offset
+            view.render(stdscr, Rect(x, y, required_size.width, required_size.height))
+
+            x_offset += required_size.width + padding.right
+
+
     def add_view(self, view, paddding):
         self.__elements.append((view, paddding))
 
