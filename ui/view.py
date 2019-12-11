@@ -42,3 +42,31 @@ class Label(View):
 
     def required_size(self):
         return Size(len(self.text), 1)
+
+
+class HBox(View):
+
+    def __init__(self):
+        super().__init__()
+        self.__elements = []
+
+    def render(self, stdscr, rect):
+        super().render(stdscr, rect)
+
+    def add_view(self, view, paddding):
+        self.__elements.append((view, paddding))
+
+    def required_size(self):
+        width = 0
+        max_height = 0
+
+        for view, padding in self.__elements:
+            required_view_size = view.required_size()
+            if required_view_size.width < 0 or required_view_size.height < 0:
+                raise Exception('Element views of a HBox need to be able to determine the required size prior to rendering')
+
+            width += padding.left + required_view_size.width + padding.right
+            height = padding.top + required_view_size.height + padding.bottom
+            max_height = max(max_height, height)
+
+        return Size(width, max_height)

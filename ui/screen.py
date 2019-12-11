@@ -56,7 +56,9 @@ class ConstrainedBasedScreen(Screen):
 
         screen_height, screen_width = self.stdscr.getmaxyx()
         for view, placement_calc in self.__views:
-            x, y, width, height = placement_calc(screen_width, screen_height)
+            x, y, width, height = placement_calc(screen_width, screen_height, view)
+            x = min(max(x, 0), screen_width)
+            y = min(max(y, 0), screen_height)
             rect = Rect(x, y, width, height)
             view.render(self.stdscr, rect)
 
