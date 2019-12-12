@@ -52,7 +52,7 @@ class ListView(View):
         return Size(-1, -1)
 
     def __clip_selected_row_index(self, n_rows):
-        self.__selected_row_index = max(min(n_rows, self.__selected_row_index), 0)
+        self.__selected_row_index = max(min(n_rows-1, self.__selected_row_index), 0)
 
     def __align_frame(self, n_rows, n_available_lines):
         # Make sure from is not negative
