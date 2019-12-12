@@ -19,7 +19,6 @@ class ListView(View):
         super().__init__()
         self.__data_source = data_source
         self.__from_index = 0
-        self.__to_index = 0
         self.__selected_row_index = 0
         self.__row_factory = row_factory
 
@@ -39,13 +38,15 @@ class ListView(View):
         self.__clip_selected_row_index(n_rows)
         self.__align_frame(n_rows, rect.height)
 
-        for i in range(self.__from_index, self.__to_index+1):
-            if i >= n_rows:
+        for i in range(0, rect.height):
+            item_index = self.__from_index + i
+
+            if item_index >= n_rows:
                 break
 
-            is_selected = i == self.__selected_row_index
-            data = self.__data_source.get_data(i)
-            row_view = self.__row_factory.build_row(i, data, is_selected, rect.width)
+            is_selected = item_index == self.__selected_row_index
+            data = self.__data_source.get_data(item_index)
+            row_view = self.__row_factory.build_row(item_index, data, is_selected, rect.width)
             row_view.render(stdscr, Rect(rect.x, rect.y+i, rect.width, 1))
 
     def required_size(self):
@@ -55,19 +56,14 @@ class ListView(View):
         self.__selected_row_index = max(min(n_rows-1, self.__selected_row_index), 0)
 
     def __align_frame(self, n_rows, n_available_lines):
-        # Make sure from is not negative
         self.__from_index = max(self.__from_index, 0)
-
-        # Make sure from <= selected
         self.__from_index = min(self.__from_index, self.__selected_row_index)
 
-        # Make sure the frame is as big as the available space
-        self.__to_index = self.__from_index + n_available_lines -1
+        if self.__selected_row_index >= (self.__from_index + n_available_lines-1):
+            self.__from_index = max(0, self.__selected_row_index - n_available_lines +1)
 
-        # Check if selected > to
-        if self.__selected_row_index > self.__to_index:
-            self.__to_index = self.__selected_row_index
-            self.__from_index = min(0, (self.__to_index - n_available_lines) + 1)
+        if self.__from_index + n_available_lines > n_rows:
+            self.__from_index = max(0, n_rows - n_available_lines)
 
 
 class Label(View):
