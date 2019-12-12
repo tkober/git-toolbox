@@ -88,7 +88,7 @@ class ListView(View):
 
 class Label(View):
 
-    def __init__(self, text):
+    def __init__(self, text=''):
         super().__init__()
         self.text = text
         self.attributes = []
@@ -116,16 +116,19 @@ class HBox(View):
     def __init__(self):
         super().__init__()
         self.__elements = []
+        self.clipping_callback = None
 
     def render(self, stdscr, rect):
         super().render(stdscr, rect)
 
         x_offset = 0
+        clipped = False
         for view, padding in self.__elements:
             x_offset += padding.left
             required_size = view.required_size()
 
             if x_offset+required_size.width >= rect.width:
+                clipped = True
                 break
 
             y = rect.y + padding.top
@@ -133,6 +136,10 @@ class HBox(View):
             view.render(stdscr, Rect(x, y, required_size.width, required_size.height))
 
             x_offset += required_size.width + padding.right
+
+        if self.clipping_callback is not None:
+            self.clipping_callback(clipped)
+
 
 
     def add_view(self, view, paddding):
