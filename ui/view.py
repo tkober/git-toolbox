@@ -15,6 +15,24 @@ class View:
         pass
 
 
+class BackgroundView(View):
+
+    def __init__(self, color_pair):
+        super().__init__()
+        self.color_pair = color_pair
+
+    def render(self, stdscr, rect):
+        super().render(stdscr, rect)
+
+        stdscr.attron(self.color_pair)
+
+        for x in range(0, rect.width):
+            for y in range(0, rect.height):
+                stdscr.addch(y, x, ord(' '))
+
+        stdscr.attroff(self.color_pair)
+
+
 class ListView(View):
 
     def __init__(self, data_source, row_factory):
