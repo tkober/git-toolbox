@@ -40,11 +40,13 @@ class ListView(View):
         self.__align_frame(n_rows, rect.height)
 
         for i in range(self.__from_index, self.__to_index+1):
-            is_selected = i == self.__selected_row_index
-            row_view = self.__row_factory.build(i, is_selected, rect.width)
-            row_view.render(stdscr, Rect(rect.x, rect.y+i, rect.width, 1))
+            if i >= n_rows:
+                break
 
-        stdscr.addstr(0, 0, str(rect.width)+' '+str(rect.height))
+            is_selected = i == self.__selected_row_index
+            data = self.__data_source.get_data(i)
+            row_view = self.__row_factory.build_row(i, data, is_selected, rect.width)
+            row_view.render(stdscr, Rect(rect.x, rect.y+i, rect.width, 1))
 
     def required_size(self):
         return Size(-1, -1)
