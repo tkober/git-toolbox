@@ -1,3 +1,5 @@
+import curses
+
 from ui.geometry import Size, Rect
 
 
@@ -71,14 +73,21 @@ class Label(View):
     def __init__(self, text):
         super().__init__()
         self.text = text
+        self.attributes = []
 
     def render(self, stdscr, rect):
         super().render(stdscr, rect)
+
+        for attribute in self.attributes:
+            stdscr.attron(attribute)
 
         if rect.width >= len(self.text):
             stdscr.addstr(rect.y, rect.x, self.text)
         else:
             stdscr.addstr(rect.y, rect.x, self.text[:rect.width-2]+'..')
+
+        for attribute in self.attributes:
+            stdscr.attroff(attribute)
 
     def required_size(self):
         return Size(len(self.text), 1)
