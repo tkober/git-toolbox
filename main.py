@@ -8,6 +8,7 @@ from ui.view import ListView, Label, HBox, BackgroundView
 from utils.git import Stage
 
 KEY_SPACE=ord(' ')
+KEY_ENTER=ord('\n')
 KEY_C=ord('c')
 KEY_Q=ord('q')
 KEY_R=ord('r')
@@ -28,7 +29,8 @@ COLOR_PAIR_MODIFIED=8
 COLOR_PAIR_MOVED=9
 COLOR_PAIR_UNTRACKED=10
 COLOR_PAIR_STAGED=11
-
+COLOR_PAIR_CONFIRMATION=12
+COLOR_PAIR_CONFIRMATION_SELECTION=13
 
 LEGEND=[
     ('[SPACE]', ' Toggle file '),
@@ -92,7 +94,6 @@ class TableViewDelegate:
 
 
 def main(stdscr):
-
     repository_directory = os. getcwd()
     stage = Stage(repository_directory)
 
@@ -110,6 +111,8 @@ def main(stdscr):
     curses.init_pair(COLOR_PAIR_UNTRACKED, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
     curses.init_pair(COLOR_PAIR_STAGED, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIR_CONFIRMATION, curses.COLOR_WHITE, curses.COLOR_RED)
+    curses.init_pair(COLOR_PAIR_CONFIRMATION_SELECTION, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
     change_type_colors = {
         'A': curses.color_pair(COLOR_PAIR_ADDED),
@@ -176,65 +179,123 @@ def main(stdscr):
     list_view = ListView(delegate)
     screen.add_view(list_view, lambda w, h, v: (0, 1, w, h-2))
 
+    confirmation_active = False
+    confirmation_action = None
+
+    def perform_checkout(file):
+        stage.checkout(file)
+        refresh_stage()
+
+    confirmation_background = BackgroundView(curses.color_pair(COLOR_PAIR_CONFIRMATION))
+    confirmation_text_label = Label()
+    confirmation_text_label.attributes.append(curses.color_pair(COLOR_PAIR_CONFIRMATION))
+    confirmation_no_label = Label(' NO ')
+    confirmation_yes_label = Label(' YES ')
+    yes_selected = False
+
+    def update_confirmation_answer_labels():
+        confirmation_no_label.attributes.clear()
+        confirmation_yes_label.attributes.clear()
+
+        if yes_selected:
+            confirmation_no_label.attributes.append(curses.color_pair(COLOR_PAIR_CONFIRMATION))
+            confirmation_yes_label.attributes.append(curses.color_pair(COLOR_PAIR_CONFIRMATION_SELECTION))
+        else:
+            confirmation_no_label.attributes.append(curses.color_pair(COLOR_PAIR_CONFIRMATION_SELECTION))
+            confirmation_yes_label.attributes.append(curses.color_pair(COLOR_PAIR_CONFIRMATION))
+
+    def show_confirmation(text):
+        confirmation_text_label.text = text
+        screen.add_view(confirmation_background, lambda w, h, v: (0, h-1, w-1, 1))
+        screen.add_view(confirmation_yes_label, lambda w, h, v:  (w-10, h-1, 5, 1))
+        screen.add_view(confirmation_no_label, lambda w, h, v:   (w-14, h-1, 4, 1))
+        screen.add_view(confirmation_text_label, lambda w, h, v: (2, h-1, w-16, 1))
+        update_confirmation_answer_labels()
+
+    def hide_confirmation():
+        screen.remove_view(confirmation_background)
+        screen.remove_view(confirmation_yes_label)
+        screen.remove_view(confirmation_no_label)
+        screen.remove_view(confirmation_text_label)
+
+
     while 1:
         branch_label.text = '['+stage.active_branch_name()+']'
 
         screen.render()
         key = stdscr.getch()
 
-        if key == curses.KEY_UP:
-            list_view.select_previous()
-
-        elif key == curses.KEY_DOWN:
-            list_view.select_next()
-
-        elif key == KEY_SPACE:
-            file = delegate.get_data(list_view.get_selected_row_index())
-            if file.is_staged():
-                stage.reset(file)
-            else:
-                stage.add(file)
-            refresh_stage()
-            list_view.select_next()
-
-        elif key == KEY_A:
-            all_staged = True
-            for file in stage.status():
-                if file.is_staged() is not True:
-                    all_staged = False
-                    break
-
-            if all_staged:
-                stage.reset_all()
-            else:
-                stage.add_all()
-            refresh_stage()
-
-        elif key == KEY_I:
-            file = delegate.get_data(list_view.get_selected_row_index())
-            if file.is_tracked() is not True:
-                stage.ignore(file)
-                refresh_stage()
-
-        elif key == KEY_S:
-            if len(stage.status()) > 0:
-                stage.stash_all()
-                refresh_stage()
-
-        elif key == KEY_P:
-            stage.pop_stash()
-            refresh_stage()
-
-        elif key == KEY_C:
-            file = delegate.get_data(list_view.get_selected_row_index())
-            if file.is_tracked():
-                stage.checkout(file)
-                refresh_stage()
-
-        elif key == KEY_Q:
+        if key == KEY_Q:
             exit(0)
 
-        elif key == KEY_R:
-            refresh_stage()
+        if confirmation_active:
+            if key == curses.KEY_LEFT:
+                yes_selected = False
+                update_confirmation_answer_labels()
+
+            elif key == curses.KEY_RIGHT:
+                yes_selected = True
+                update_confirmation_answer_labels()
+
+            elif key == KEY_ENTER:
+                confirmation_active = False
+                hide_confirmation()
+                if yes_selected and confirmation_action is not None:
+                    confirmation_action()
+
+        else:
+            if key == curses.KEY_UP:
+                list_view.select_previous()
+
+            elif key == curses.KEY_DOWN:
+                list_view.select_next()
+
+            elif key == KEY_SPACE:
+                file = delegate.get_data(list_view.get_selected_row_index())
+                if file.is_staged():
+                    stage.reset(file)
+                else:
+                    stage.add(file)
+                refresh_stage()
+                list_view.select_next()
+
+            elif key == KEY_A:
+                all_staged = True
+                for file in stage.status():
+                    if file.is_staged() is not True:
+                        all_staged = False
+                        break
+
+                if all_staged:
+                    stage.reset_all()
+                else:
+                    stage.add_all()
+                refresh_stage()
+
+            elif key == KEY_I:
+                file = delegate.get_data(list_view.get_selected_row_index())
+                if file.is_tracked() is not True:
+                    stage.ignore(file)
+                    refresh_stage()
+
+            elif key == KEY_S:
+                if len(stage.status()) > 0:
+                    stage.stash_all()
+                    refresh_stage()
+
+            elif key == KEY_P:
+                stage.pop_stash()
+                refresh_stage()
+
+            elif key == KEY_C:
+                file = delegate.get_data(list_view.get_selected_row_index())
+                if file.is_tracked():
+                    confirmation_active = True
+                    yes_selected = False
+                    confirmation_action = lambda : perform_checkout(file)
+                    show_confirmation('Checkout selected file?')
+
+            elif key == KEY_R:
+                refresh_stage()
 
 curses.wrapper(main)

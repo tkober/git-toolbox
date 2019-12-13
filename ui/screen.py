@@ -51,6 +51,13 @@ class ConstrainedBasedScreen(Screen):
     def add_view(self, view, placement_calc):
         self.__views.append((view, placement_calc))
 
+    def remove_view(self, view):
+        for item in self.__views:
+            v, _ = item
+            if v == view:
+                self.__views.remove(item)
+                break
+
     def render(self):
         self.begin_redndering()
 
@@ -64,5 +71,5 @@ class ConstrainedBasedScreen(Screen):
 
         self.end_redndering()
 
-    def getViews(self):
+    def get_views(self):
         return [view for view, _ in self.__views]
