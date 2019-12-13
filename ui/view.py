@@ -35,12 +35,11 @@ class BackgroundView(View):
 
 class ListView(View):
 
-    def __init__(self, data_source, row_factory):
+    def __init__(self, delegate):
         super().__init__()
-        self.__data_source = data_source
+        self.delegate = delegate
         self.__from_index = 0
         self.__selected_row_index = 0
-        self.__row_factory = row_factory
 
     def select_next(self):
         self.select_row(self.__selected_row_index + 1)
@@ -53,7 +52,7 @@ class ListView(View):
 
     def render(self, stdscr, rect):
         super().render(stdscr, rect)
-        n_rows = self.__data_source.number_of_rows()
+        n_rows = self.delegate.number_of_rows()
 
         self.__clip_selected_row_index(n_rows)
         self.__align_frame(n_rows, rect.height)
@@ -65,8 +64,8 @@ class ListView(View):
                 break
 
             is_selected = item_index == self.__selected_row_index
-            data = self.__data_source.get_data(item_index)
-            row_view = self.__row_factory.build_row(item_index, data, is_selected, rect.width)
+            data = self.delegate.get_data(item_index)
+            row_view = self.delegate.build_row(item_index, data, is_selected, rect.width)
             row_view.render(stdscr, Rect(rect.x, rect.y+i, rect.width, 1))
 
     def required_size(self):
