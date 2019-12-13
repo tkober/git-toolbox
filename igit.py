@@ -7,17 +7,30 @@ from ui.screen import ConstrainedBasedScreen
 from ui.view import ListView, Label, HBox, BackgroundView
 from utils.git import Stage
 
-KEY_SPACE=32
-KEY_C=99
-KEY_Q=113
+KEY_SPACE=ord(' ')
+KEY_C=ord('c')
+KEY_Q=ord('q')
+KEY_R=ord('r')
+KEY_A=ord('a')
+KEY_I=ord('i')
+KEY_S=ord('s')
+KEY_P=ord('p')
 
+COLOR_PAIR_DEFAULT=0
 COLOR_PAIR_TITLE=1
 COLOR_PAIR_KEY=2
 COLOR_PAIR_DESCRIPTION=3
 COLOR_PAIR_BRANCH=4
+COLOR_PAIR_SELECTED=5
+COLOR_PAIR_ADDED=6
+COLOR_PAIR_DELETED=7
+COLOR_PAIR_MODIFIED=8
+COLOR_PAIR_MOVED=9
+COLOR_PAIR_UNTRACKED=10
+COLOR_PAIR_STAGED=11
+
 
 LEGEND=[
-    #('[UP/DWN]', ' Scroll '),
     ('[SPACE]', ' Toggle file '),
     ('[A]', ' Toggle all '),
     ('[I]', ' Ignore file '),
@@ -28,33 +41,47 @@ LEGEND=[
     ('[Q]', ' Quit ')
 ]
 
-#########################################################################
-class TestDataSource:
 
-    def __init__(self, items):
-        self.items = items
+class TableViewDelegate:
+
+    def __init__(self, change_type_colors, files=[]):
+        self.change_type_colors = change_type_colors
+        self.files = files
 
     def number_of_rows(self):
-        return len(self.items)
+        return len(self.files)
 
     def get_data(self, i):
-        return self.items[i]
+        return self.files[i]
 
-    def build_row(self, i, data, is_selected, width):
-        content = data.get_change_type() + '  ' + data.get_relative_path()
+    def build_row(self, i, file, is_selected, width):
+        hbox = HBox()
+
+        change_type = file.get_change_type()
+        change_type_label = Label(change_type)
+        change_type_label.attributes.append(curses.A_BOLD)
+        change_type_label.attributes.append(self.change_type_colors[change_type])
+        hbox.add_view(change_type_label, Padding(3, 0, 2, 0))
+
+        path_label = Label(file.get_relative_path())
+        hbox.add_view(path_label, Padding(0, 0, 0, 0))
+
+        if file.is_staged():
+            path_label.attributes.append(curses.color_pair(COLOR_PAIR_STAGED))
+
+        result = hbox
         if is_selected:
-            content = '* '+content
-        else:
-            content = '  '+content
+            result = BackgroundView(curses.color_pair(COLOR_PAIR_SELECTED))
+            result.add_view(hbox)
+            for label in hbox.get_elements():
+                label.attributes.append(curses.color_pair(COLOR_PAIR_SELECTED))
 
-        return Label(content)
-#########################################################################
+        return result
+
 
 def main(stdscr):
 
-    working_directory = os. getcwd()
-    repository_directory = working_directory # TODO: command line argument should be possible
-
+    repository_directory = os. getcwd()
     stage = Stage(repository_directory)
 
     curses.curs_set(0)
@@ -62,6 +89,25 @@ def main(stdscr):
     curses.init_pair(COLOR_PAIR_KEY, curses.COLOR_BLACK, curses.COLOR_CYAN)
     curses.init_pair(COLOR_PAIR_DESCRIPTION, curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.init_pair(COLOR_PAIR_BRANCH, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
+    curses.init_pair(COLOR_PAIR_SELECTED, curses.COLOR_BLACK, curses.COLOR_CYAN)
+
+    curses.init_pair(COLOR_PAIR_ADDED, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIR_DELETED, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIR_MODIFIED, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIR_MOVED, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIR_UNTRACKED, curses.COLOR_BLUE, curses.COLOR_BLACK)
+
+    curses.init_pair(COLOR_PAIR_STAGED, curses.COLOR_GREEN, curses.COLOR_BLACK)
+
+    change_type_colors = {
+        'A': curses.color_pair(COLOR_PAIR_ADDED),
+        'D': curses.color_pair(COLOR_PAIR_DELETED),
+        'R': curses.color_pair(COLOR_PAIR_MOVED),
+        'M': curses.color_pair(COLOR_PAIR_MODIFIED),
+        'T': curses.color_pair(COLOR_PAIR_MODIFIED),
+        'C': curses.color_pair(COLOR_PAIR_DEFAULT),
+        '?': curses.color_pair(COLOR_PAIR_UNTRACKED)
+    }
 
     screen = ConstrainedBasedScreen(stdscr)
     title_background = BackgroundView(curses.color_pair(COLOR_PAIR_TITLE))
@@ -109,12 +155,14 @@ def main(stdscr):
     screen.add_view(legend_hbox, lambda w, h, v: (0, h-1, w-more_label.required_size().width, 1))
     screen.add_view(more_label, lambda  w, h, v: (w-v.required_size().width-1, h-1, v.required_size().width, 1))
 
+    delegate = TableViewDelegate(change_type_colors)
+    def refresh_stage():
+        delegate.files = stage.status()
 
-    #########################################################################
-    dataSource = TestDataSource(stage.status())
-    listView = ListView(dataSource, dataSource)
-    screen.add_view(listView, lambda w, h, v: (1, 1, w, h-2))
-    #########################################################################
+    refresh_stage()
+
+    list_view = ListView(delegate)
+    screen.add_view(list_view, lambda w, h, v: (0, 1, w, h-2))
 
     while 1:
         branch_label.text = '['+stage.active_branch_name()+']'
@@ -123,18 +171,55 @@ def main(stdscr):
         key = stdscr.getch()
 
         if key == curses.KEY_UP:
-            listView.select_previous()
+            list_view.select_previous()
 
         elif key == curses.KEY_DOWN:
-            listView.select_next()
+            list_view.select_next()
 
         elif key == KEY_SPACE:
-            pass
+            file = delegate.get_data(list_view.get_selected_row_index())
+            if file.is_staged():
+                stage.reset(file)
+            else:
+                stage.add(file)
+            refresh_stage()
+            list_view.select_next()
+
+        elif key == KEY_A:
+            all_staged = True
+            for file in stage.status():
+                if file.is_staged() is not True:
+                    all_staged = False
+                    break
+
+            if all_staged:
+                stage.reset_all()
+            else:
+                stage.add_all()
+            refresh_stage()
+
+        elif key == KEY_I:
+            file = delegate.get_data(list_view.get_selected_row_index())
+            if file.is_tracked() is not True:
+                stage.ignore(file)
+                refresh_stage()
+
+        elif key == KEY_S:
+            if len(stage.status()) > 0:
+                stage.stash_all()
+                refresh_stage()
+
+        elif key == KEY_P:
+            stage.pop_stash()
+            refresh_stage()
 
         elif key == KEY_C:
             pass
 
         elif key == KEY_Q:
             exit(0)
+
+        elif key == KEY_R:
+            refresh_stage()
 
 curses.wrapper(main)

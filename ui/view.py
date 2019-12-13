@@ -20,17 +20,26 @@ class BackgroundView(View):
     def __init__(self, color_pair):
         super().__init__()
         self.color_pair = color_pair
+        self.__subviews = []
+
+    def add_view(self, view):
+        self.__subviews.append(view)
 
     def render(self, stdscr, rect):
         super().render(stdscr, rect)
 
         stdscr.attron(self.color_pair)
 
-        for x in range(0, rect.width):
-            for y in range(0, rect.height):
+        for x_offset in range(0, rect.width):
+            for y_offset in range(0, rect.height):
+                x = rect.x + x_offset
+                y = rect.y + y_offset
                 stdscr.addch(y, x, ord(' '))
 
         stdscr.attroff(self.color_pair)
+
+        for view in self.__subviews:
+            view.render(stdscr, rect)
 
 
 class ListView(View):
@@ -83,6 +92,9 @@ class ListView(View):
 
         if self.__from_index + n_available_lines > n_rows:
             self.__from_index = max(0, n_rows - n_available_lines)
+
+    def get_selected_row_index(self):
+        return self.__selected_row_index
 
 
 class Label(View):
@@ -158,3 +170,6 @@ class HBox(View):
             max_height = max(max_height, height)
 
         return Size(width, max_height)
+
+    def get_elements(self):
+        return [view for view, _ in self.__elements]
