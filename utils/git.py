@@ -1,5 +1,3 @@
-import os
-
 from git import Repo
 
 class File:
@@ -80,8 +78,8 @@ class Stage:
         finally:
             gitignore_file.close()
 
-    def checkout(self, diff):
-        pass
+    def checkout(self, file):
+        self.__repo.git.checkout(file.get_relative_path())
 
     def add(self, file):
         self.__repo.git.add(file.get_relative_path())
@@ -94,3 +92,4 @@ class Stage:
 
     def reset_all(self):
         self.__repo.git.reset('HEAD')
+

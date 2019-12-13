@@ -214,7 +214,10 @@ def main(stdscr):
             refresh_stage()
 
         elif key == KEY_C:
-            pass
+            file = delegate.get_data(list_view.get_selected_row_index())
+            if file.is_tracked():
+                stage.checkout(file)
+                refresh_stage()
 
         elif key == KEY_Q:
             exit(0)
