@@ -57,6 +57,12 @@ class TableViewDelegate:
     def build_row(self, i, file, is_selected, width):
         hbox = HBox()
 
+        staged_char = '+'
+        if file.is_staged() is not True:
+            staged_char = ' '
+        staged_label = Label(staged_char)
+        hbox.add_view(staged_label, Padding(2, 0, 0, 0))
+
         change_type = file.get_change_type()
         change_type_label = Label(change_type)
         change_type_label.attributes.append(curses.A_BOLD)
@@ -67,6 +73,7 @@ class TableViewDelegate:
         hbox.add_view(path_label, Padding(0, 0, 0, 0))
 
         if file.is_staged():
+            staged_label.attributes.append(curses.color_pair(COLOR_PAIR_STAGED))
             path_label.attributes.append(curses.color_pair(COLOR_PAIR_STAGED))
 
         result = hbox
@@ -95,7 +102,7 @@ def main(stdscr):
     curses.init_pair(COLOR_PAIR_DELETED, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(COLOR_PAIR_MODIFIED, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(COLOR_PAIR_MOVED, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-    curses.init_pair(COLOR_PAIR_UNTRACKED, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    curses.init_pair(COLOR_PAIR_UNTRACKED, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
     curses.init_pair(COLOR_PAIR_STAGED, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
