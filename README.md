@@ -1,1 +1,1 @@
-# igit
+# git-stage
