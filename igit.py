@@ -69,7 +69,12 @@ class TableViewDelegate:
         change_type_label.attributes.append(self.change_type_colors[change_type])
         hbox.add_view(change_type_label, Padding(3, 0, 2, 0))
 
-        path_label = Label(file.get_relative_path())
+        path_to_show = file.get_relative_path()
+        available_width = width - hbox.required_size().width
+        if available_width < len(path_to_show):
+            path_to_show = '...' + path_to_show[len(path_to_show)-available_width+4:]
+
+        path_label = Label(path_to_show)
         hbox.add_view(path_label, Padding(0, 0, 0, 0))
 
         if file.is_staged():
@@ -153,11 +158,11 @@ def main(stdscr):
     for key, description in LEGEND:
         key_label = Label(key)
         key_label.attributes.append(curses.color_pair(COLOR_PAIR_KEY))
-        legend_hbox.add_view(key_label, Padding(0, 0, 0, 0))
+        legend_hbox.add_view(key_label, Padding(2, 0, 0, 0))
 
         description_label = Label(description)
         description_label.attributes.append(curses.color_pair(COLOR_PAIR_DESCRIPTION))
-        legend_hbox.add_view(description_label, Padding(0, 0, 2, 0))
+        legend_hbox.add_view(description_label, Padding(0, 0, 0, 0))
 
     screen.add_view(legend_hbox, lambda w, h, v: (0, h-1, w-more_label.required_size().width, 1))
     screen.add_view(more_label, lambda  w, h, v: (w-v.required_size().width-1, h-1, v.required_size().width, 1))
