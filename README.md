@@ -2,7 +2,7 @@
 
 This tool implements an interactive and more sophisticated version of git-status.
 
-![screenshot][doc/screenshot.png] 
+![screenshot][https://raw.githubusercontent.com/tkober/igit/master/doc/screenshot.png] 
 
 ## Prerequireties
 
