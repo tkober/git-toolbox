@@ -1,3 +1,5 @@
+import subprocess
+
 from git import Repo
 
 class File:
@@ -78,6 +80,9 @@ class Stage:
             gitignore_file.close()
 
     def checkout(self, file):
+        if file.is_staged():
+            self.reset(file)
+
         self.__repo.git.checkout(file.get_relative_path())
 
     def add(self, file):
@@ -87,7 +92,7 @@ class Stage:
         self.__repo.git.add('-A')
 
     def reset(self, file):
-        self.__repo.git.reset(file.get_relative_path())
+        subprocess.Popen('git reset HEAD -- ' + file.get_relative_path(), shell=True).wait()
 
     def reset_all(self):
         self.__repo.git.reset('HEAD')
