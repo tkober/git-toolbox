@@ -50,7 +50,6 @@ class Stage:
 
     def status(self):
         result = self.__staged_files() + self.__unstaged_files() + self.__untracked_files()
-        #result.sort(key= lambda file: os.path.basename(file.get_relative_path()))
         result.sort(key= lambda file: file.get_relative_path())
         return result
 
