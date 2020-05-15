@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ENV_NAME="git-stage-env"
+ENV_NAME="git-toolbox-env"
 
 if [ ! -z "$1" ]
   then
@@ -12,4 +12,4 @@ if [ -x "$(command -v conda)" ]; then
 fi
 
 BASEDIR=$(dirname "$0")
-python "$BASEDIR/app.py"
+python "$BASEDIR/stage.py"

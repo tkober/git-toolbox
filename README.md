@@ -1,8 +1,6 @@
-# git-stage
+# git-toolbox
 
-This tool implements an interactive and more sophisticated version of git-status.
-
-![screenshot](doc/screenshot.png)
+This repository contains a bunch of more sophisticated versions of common git command line tools.
 
 ## Prerequireties
 
@@ -19,7 +17,13 @@ The repository's root directory contains a bash script for installation.
 
 Some packages will be installed during the installation. If anaconda is available a seperate environment will be created. If anaconda is not found pip will be used instead. This could lead to overwriting existing packages or versions. The usage of anaconda is highly recommended. You can get it [here](https://www.anaconda.com/).
 
-## Run
+## git-stage
+
+This tool implements an interactive and more sophisticated version of git-status.
+
+![screenshot](doc/screenshot_stage.png)
+
+### Run
 
 After installation _git-stage_ is available in your bash using the following command:
 

@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-ENV_NAME="git-stage-env"
+ENV_NAME="git-toolbox-env"
 YML_FILE="environment.yml"
 PIP_FILE="environment.txt"
-RUN_SCRIPT="run.sh"
-FUNCTION_NAME="stage"
+
+STAGE_RUN_SCRIPT="stage.sh"
+STAGE_FUNCTION_NAME="stage"
+
 BASEDIR=$(cd "$(dirname "$0")/"; pwd)
 
 if [ -x "$(command -v conda)" ]; then
@@ -23,5 +25,5 @@ if [ -x "$(command -v conda)" ]; then
 	fi
 fi
 
-echo "function $FUNCTION_NAME { $BASEDIR/$RUN_SCRIPT \$1; }" >> ~/.bash_profile
+echo "function $STAGE_FUNCTION_NAME { $BASEDIR/$STAGE_RUN_SCRIPT \$1; }" >> ~/.bash_profile
 clear

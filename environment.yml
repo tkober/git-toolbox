@@ -1,4 +1,4 @@
-name: git-stage-env
+name: git-toolbox-env
 dependencies:
   - python>=3.7.4
   - gitpython==3.0.5
