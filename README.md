@@ -15,7 +15,7 @@ The repository's root directory contains a bash script for installation.
 
 #### Caution
 
-Some packages will be installed during the installation. If anaconda is available a seperate environment will be created. If anaconda is not found pip will be used instead. This could lead to overwriting existing packages or versions. The usage of anaconda is highly recommended. You can get it [here](https://www.anaconda.com/).
+Some packages will be installed during the installation. If anaconda is available a seperate environment will be created. If Anaconda is not found PIP will be used instead. This could lead to overwriting existing packages or versions. The usage of Anaconda is highly recommended. You can get it [here](https://www.anaconda.com/).
 
 ## git-stage
 
