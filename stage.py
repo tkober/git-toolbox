@@ -2,9 +2,9 @@ import curses
 import os
 from pathlib import Path
 
-from ui.geometry import Padding
-from ui.screen import ConstrainedBasedScreen
-from ui.view import ListView, Label, HBox, BackgroundView
+from gupy.geometry import Padding
+from gupy.screen import ConstrainedBasedScreen
+from gupy.view import ListView, Label, HBox, BackgroundView
 from utils.git import Stage
 
 KEY_SPACE=ord(' ')
