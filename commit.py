@@ -25,15 +25,17 @@ def commit(content=''):
 
     command = ['git', 'commit', '-t', tmpFilePath]
     returnCode = call(command)
-    print(returnCode)
 
     os.remove(tmpFilePath)
+
+    return returnCode == 0
 
 if __name__ == '__main__':
     args = parseArguments()
 
+    commitSuccessful = False
     if args.simple:
-        commit()
+        commitSuccessful = commit()
 
     else:
         repository_directory = os.getcwd()
@@ -43,6 +45,12 @@ if __name__ == '__main__':
         ticket = '-'.join(name.split('-')[:2])
 
         if ticket in ['master', 'develop']:
-            commit()
+            commitSuccessful = commit()
         else:
-            commit('{}'.format(ticket))
+            commitSuccessful = commit('{}'.format(ticket))
+
+
+    if commitSuccessful:
+        print('okay')
+    else:
+        print('nooo')
