@@ -61,20 +61,6 @@ class Repository:
             refs = [ref for ref in self.repo.refs if isinstance(ref, RemoteReference) or isinstance(ref, Head)]
 
         return [ Branch(ref) for ref in refs ]
-        branches = {}
-        for ref in refs:
-            head = ref.remote_head if isinstance(ref, RemoteReference) else ref.__repr__()
-            if head not in branches:
-                branches[head] = Branch(head)
-            branch = branches[head]
-
-            if isinstance(ref, RemoteReference):
-                branch.remote = ref
-            else:
-                branch.local = ref
-
-        return branches
-
 
 class Branch:
 
