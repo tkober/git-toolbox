@@ -83,6 +83,8 @@ class UI():
             screen.render()
 
             key = stdscr.getch()
+            if key == curses.KEY_RESIZE:
+                continue
 
 
 def parseArguments():
