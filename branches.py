@@ -8,16 +8,27 @@ from gupy.screen import ConstrainedBasedScreen
 from pathlib import Path
 
 class Keys:
-    Q=ord('q')
+    UP = curses.KEY_UP
+    DOWN = curses.KEY_DOWN
+    LEFT = curses.KEY_LEFT
+    RIGHT = curses.KEY_RIGHT
+    ESCAPE = 27
+    BACKSPACE = 127
+    SPACE = ord(' ')
+    ENTER = ord('\n')
+
+    F = ord('f')
+    Q = ord('q')
+    C = ord('c')
 
 class Colorpairs:
-    KEY=1
-    DESCRIPTION=2
-    SELECTED=3
-    HEADER_TEXT=4
-    FILTER_CRITERIA=5
-    FILTER_CRITERIA_EDITING=6
-    PATTERN=7
+    KEY = 1
+    DESCRIPTION = 2
+    SELECTED = 3
+    HEADER_TEXT = 4
+    FILTER_CRITERIA = 5
+    FILTER_CRITERIA_EDITING = 6
+    PATTERN = 7
 
 class Legends:
 
@@ -34,7 +45,6 @@ class Legends:
 
     FILTER = [
         ('[ENTER]', ' Quit and save Filter '),
-        ('[UP|DOWN]', ' Change Filter Criteria '),
         ('[ESC]', ' Quit and clear Filter ')
     ]
 
@@ -108,8 +118,6 @@ class UI():
         except ValueError:
             pass
 
-        print(title)
-
         directoryLabel = Label(title)
         directoryLabel.attributes.append(curses.color_pair(Colorpairs.HEADER_TEXT))
         directoryLabel.attributes.append(curses.A_BOLD)
@@ -131,8 +139,8 @@ class UI():
 
         filterLabel.text = self.__filter
 
-        filterCriteria = '='
-        if len(self.__filter) > 0:
+        filterCriteria = 'FILTER='
+        if len(self.getFilter()) > 0:
             filterCriteriaLabel.text = filterCriteria
         else:
             filterCriteriaLabel.text = filterCriteria if self.isFiltering else ''
@@ -143,7 +151,7 @@ class UI():
             Colorpairs.FILTER_CRITERIA)
         filterCriteriaLabel.attributes.append(color)
 
-        if len(self.__filter) == 0 and not self.isFiltering:
+        if len(self.getFilter()) == 0 and not self.isFiltering:
             self.titleElements = self.addTitle(screen)
         else:
             screen.remove_views(self.titleElements)
@@ -171,12 +179,51 @@ class UI():
                 continue
 
             if self.isFiltering:
-                pass
+                if key == Keys.ESCAPE:
+                    self.isFiltering = False
+                    screen.remove_views(list(legendElements))
+                    legendElements = self.addLegend(screen, Legends.MAIN)
+                    self.setFilter('')
+
+                elif key == Keys.ENTER:
+                    self.isFiltering = False
+                    screen.remove_views(list(legendElements))
+                    legendElements = self.addLegend(screen, Legends.MAIN)
+                    if len(self.getFilter()) == 0:
+                        self.clearFilter()
+
+                elif key == Keys.BACKSPACE:
+                    self.setFilter(self.getFilter()[:-1])
+
+                elif key in [Keys.LEFT, Keys.RIGHT]:
+                    pass
+
+                else:
+                    character = chr(key)
+                    self.setFilter(self.getFilter() + character)
 
             else:
+                if key == Keys.F:
+                    self.isFiltering = True
+                    screen.remove_views(list(legendElements))
+                    legendElements = self.addLegend(screen, Legends.FILTER)
 
                 if key == Keys.Q:
                     exit(0)
+
+
+    def getFilter(self):
+        return self.__filter
+
+    def setFilter(self, filter):
+        self.__filter = filter
+        self.applyFilter()
+
+    def clearFilter(self):
+        self.setFilter('')
+
+    def applyFilter(self):
+        pass
 
 
 def parseArguments():
