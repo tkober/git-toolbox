@@ -176,7 +176,7 @@ def main(stdscr):
 
     refresh_stage()
 
-    list_view = ListView(delegate)
+    list_view = ListView(delegate, delegate)
     screen.add_view(list_view, lambda w, h, v: (0, 1, w, h-2))
 
     confirmation_active = False
