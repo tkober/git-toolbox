@@ -47,6 +47,10 @@ class Repository:
     def __init__(self, directory):
         super().__init__()
         self.repo = Repo(directory)
+        self.__directory = directory
+
+    def getDirectory(self):
+        return self.__directory
 
     def active_branch(self):
         return self.repo.active_branch
