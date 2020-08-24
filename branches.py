@@ -10,7 +10,7 @@ class UI():
 
 def parseArguments():
     argparser = argparse.ArgumentParser(
-        prog='commit',
+        prog='branches',
         description='Gives you an interactive overview of all branches'
     )
     return argparser.parse_args()
