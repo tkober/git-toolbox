@@ -6,10 +6,13 @@ from gupy.view import Label, HBox
 from gupy.geometry import Padding
 from gupy.screen import ConstrainedBasedScreen
 
+class Keys:
+    Q=ord('q')
+
 class Colorpairs:
-    KEY = 1
-    DESCRIPTION = 2
-    SELECTED = 3
+    KEY=1
+    DESCRIPTION=2
+    SELECTED=3
 
 class Legends:
 
@@ -85,6 +88,14 @@ class UI():
             key = stdscr.getch()
             if key == curses.KEY_RESIZE:
                 continue
+
+            if self.isFiltering:
+                pass
+
+            else:
+
+                if key == Keys.Q:
+                    exit(0)
 
 
 def parseArguments():
