@@ -2,9 +2,10 @@ import argparse
 import os
 import curses
 from utils.git import Repository
-from gupy.view import Label, HBox
+from gupy.view import Label, HBox, BackgroundView
 from gupy.geometry import Padding
 from gupy.screen import ConstrainedBasedScreen
+from pathlib import Path
 
 class Keys:
     Q=ord('q')
@@ -13,6 +14,10 @@ class Colorpairs:
     KEY=1
     DESCRIPTION=2
     SELECTED=3
+    HEADER_TEXT=4
+    FILTER_CRITERIA=5
+    FILTER_CRITERIA_EDITING=6
+    PATTERN=7
 
 class Legends:
 
@@ -37,6 +42,7 @@ class UI():
 
     def __init__(self, repo):
         self.__repo = repo
+        self.__filter = ''
 
     def setupColors(self):
         curses.curs_set(0)
@@ -44,6 +50,11 @@ class UI():
         curses.init_pair(Colorpairs.KEY, curses.COLOR_BLACK, curses.COLOR_CYAN)
         curses.init_pair(Colorpairs.DESCRIPTION, curses.COLOR_BLACK, curses.COLOR_WHITE)
         curses.init_pair(Colorpairs.SELECTED, curses.COLOR_BLACK, curses.COLOR_CYAN)
+
+        curses.init_pair(Colorpairs.FILTER_CRITERIA, curses.COLOR_BLACK, curses.COLOR_GREEN)
+        curses.init_pair(Colorpairs.FILTER_CRITERIA_EDITING, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
+        curses.init_pair(Colorpairs.HEADER_TEXT, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        curses.init_pair(Colorpairs.PATTERN, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
 
     def addLegend(self, screen, legendItems):
         moreLabel = Label('')
@@ -68,6 +79,76 @@ class UI():
 
         return (legendHBox, moreLabel)
 
+    def addHeaderBox(self, screen):
+
+        filterBackground = BackgroundView(curses.color_pair(Colorpairs.HEADER_TEXT))
+        screen.add_view(filterBackground, lambda w, h, v: (0, 0, w, 1))
+
+        filterCriteriaLabel = Label()
+        filterCriteriaLabel.attributes.append(curses.color_pair(Colorpairs.FILTER_CRITERIA))
+        filterCriteriaLabel.attributes.append(curses.A_BOLD)
+
+        filterLabel = Label()
+        filterLabel.attributes.append(curses.color_pair(Colorpairs.HEADER_TEXT))
+
+        filterHBox = HBox();
+        filterHBox.add_view(filterCriteriaLabel, Padding(0, 0, 0, 0))
+        filterHBox.add_view(filterLabel, Padding(0, 0, 0, 0))
+
+        screen.add_view(filterHBox, lambda w, h, v: (0, 0, w, 1))
+
+        return (filterBackground, filterHBox, filterCriteriaLabel, filterLabel)
+
+    def addTitle(self, screen):
+
+        path = Path(self.__repo.getDirectory())
+        try:
+            relative = path.relative_to(Path.home())
+            title = '~/' + str(relative)
+        except ValueError:
+            pass
+
+        print(title)
+
+        directoryLabel = Label(title)
+        directoryLabel.attributes.append(curses.color_pair(Colorpairs.HEADER_TEXT))
+        directoryLabel.attributes.append(curses.A_BOLD)
+
+        activeBranchLabel = Label('[' + self.__repo.active_branch_name() + ']')
+        activeBranchLabel.attributes.append(curses.color_pair(Colorpairs.PATTERN))
+        activeBranchLabel.attributes.append(curses.A_BOLD)
+
+        title_hbox = HBox()
+        title_hbox.add_view(directoryLabel, Padding(0, 0, 0, 0))
+        title_hbox.add_view(activeBranchLabel, Padding(1, 0, 0, 0))
+        screen.add_view(title_hbox, lambda w, h, v: (
+        (w - v.required_size().width) // 2, 0, title_hbox.required_size().width + 1, 1))
+
+        return (title_hbox, directoryLabel, activeBranchLabel)
+
+    def updateHeaderBox(self, screen, filterElements):
+        _, _, filterCriteriaLabel, filterLabel = filterElements
+
+        filterLabel.text = self.__filter
+
+        filterCriteria = '='
+        if len(self.__filter) > 0:
+            filterCriteriaLabel.text = filterCriteria
+        else:
+            filterCriteriaLabel.text = filterCriteria if self.isFiltering else ''
+
+        filterCriteriaLabel.attributes.clear()
+        filterCriteriaLabel.attributes.append(curses.A_BOLD)
+        color = curses.color_pair(Colorpairs.FILTER_CRITERIA_EDITING) if self.isFiltering else curses.color_pair(
+            Colorpairs.FILTER_CRITERIA)
+        filterCriteriaLabel.attributes.append(color)
+
+        if len(self.__filter) == 0 and not self.isFiltering:
+            self.titleElements = self.addTitle(screen)
+        else:
+            screen.remove_views(self.titleElements)
+            self.titleElements = []
+
     def loop(self, stdscr):
 
         self.setupColors()
@@ -75,13 +156,13 @@ class UI():
         screen = ConstrainedBasedScreen(stdscr)
         self.titleElements = []
         legendElements = self.addLegend(screen, Legends.MAIN)
-        #headerElements = self.addHeaderBox(screen)
+        headerElements = self.addHeaderBox(screen)
         #listView = self.addListView(screen)
 
         self.isFiltering = False
 
         while 1:
-            #self.updateHeaderBox(screen, headerElements)
+            self.updateHeaderBox(screen, headerElements)
 
             screen.render()
 
