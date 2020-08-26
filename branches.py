@@ -66,12 +66,13 @@ class Legends:
 
 class UI(ListViewDelegate, ListViewDataSource):
 
-    def __init__(self, repo):
+    def __init__(self, repo, keepOpen):
         self.errorMessage = None
         self.__repo = repo
         self.__filter = ''
         self.__onlyLocal = True
         self.__sortAscending = False
+        self.__keepOpen = keepOpen
         self.isFiltering = False
         self.updateList()
 
@@ -191,10 +192,10 @@ class UI(ListViewDelegate, ListViewDataSource):
             Colorpairs.FILTER_CRITERIA)
         filterCriteriaLabel.attributes.append(color)
 
+        screen.remove_views(self.titleElements)
         if len(self.getFilter()) == 0 and not self.isFiltering:
             self.titleElements = self.addTitle(screen)
         else:
-            screen.remove_views(self.titleElements)
             self.titleElements = []
 
     def addListView(self, screen):
@@ -378,7 +379,10 @@ class UI(ListViewDelegate, ListViewDataSource):
             except GitCommandError as e:
                 self.errorMessage = e.stderr
 
-        self.stopLoop()
+        if self.__keepOpen:
+            self.updateList()
+        else:
+            self.stopLoop()
 
     def stopLoop(self):
         self.__loopRunning = False
@@ -462,6 +466,12 @@ def parseArguments():
         'PATH', nargs="?",
         help='The path to the git repository that shall be used. If no path is provided the current working directory will be used.'
     )
+    argparser.add_argument(
+        '-k',
+        '--keep-open',
+        help="The app stays open after checking out a branch",
+        action="store_true"
+    )
     return argparser.parse_args()
 
 
@@ -474,7 +484,7 @@ if __name__ == '__main__':
         repositoryDirectory = os.getcwd()
     repo = Repository(repositoryDirectory)
 
-    ui = UI(repo)
+    ui = UI(repo, args.keep_open)
     curses.wrapper(ui.loop)
 
     if ui.errorMessage:
