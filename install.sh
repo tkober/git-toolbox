@@ -10,6 +10,9 @@ STAGE_FUNCTION_NAME="stage"
 COMMIT_RUN_SCRIPT="commit.sh"
 COMMIT_FUNCTION_NAME="commit"
 
+BRANCHES_RUN_SCRIPT="branches.sh"
+BRANCHES_FUNCTION_NAME="branches"
+
 BASEDIR=$(cd "$(dirname "$0")/"; pwd)
 
 if [ -x "$(command -v conda)" ]; then
@@ -30,6 +33,7 @@ fi
 
 echo "function $STAGE_FUNCTION_NAME { $BASEDIR/$STAGE_RUN_SCRIPT \$@; }" >> ~/.bash_profile
 echo "function $COMMIT_FUNCTION_NAME { $BASEDIR/$COMMIT_RUN_SCRIPT \$@; }" >> ~/.bash_profile
+echo "function $BRANCHES_FUNCTION_NAME { $BASEDIR/$BRANCHES_RUN_SCRIPT \$@; }" >> ~/.bash_profile
 
 
 clear
