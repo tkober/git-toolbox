@@ -22,6 +22,9 @@ class Keys:
     C = ord('c')
     R = ord('r')
     S = ord('s')
+    M = ord('m')
+    U = ord('u')
+    A = ord('a')
 
 class Colorpairs:
     KEY = 1
@@ -43,6 +46,8 @@ class Legends:
         ('[S]', ' Toggle order '),
         ('[F]', ' Filter '),
         ('[C]', ' Clear Filter '),
+        ('[U]', ' Update list '),
+        ('[A]', ' Fetch all '),
         ('[Q]', ' Quit ')
     ]
 
@@ -57,11 +62,16 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.__repo = repo
         self.__filter = ''
         self.__onlyLocal = True
+        self.__sortAscending = False
+        self.isFiltering = False
+        self.updateList()
+
+    def updateList(self):
         self.__branches = self.__repo.getBranches(self.__onlyLocal)
         self.__filteredBranches = self.__branches
         self.__maxRemoteNameLength = max([len(remote.name) for remote in self.__repo.remotes()])
-        self.__sortAscending = False
         self.sort()
+        self.applyFilter()
 
     def setupColors(self):
         curses.curs_set(0)
@@ -182,8 +192,6 @@ class UI(ListViewDelegate, ListViewDataSource):
         headerElements = self.addHeaderBox(screen)
         listView = self.addListView(screen)
 
-        self.isFiltering = False
-
         while 1:
             self.updateHeaderBox(screen, headerElements)
 
@@ -237,6 +245,9 @@ class UI(ListViewDelegate, ListViewDataSource):
 
                 if key == Keys.S:
                     self.toggleSortOrder()
+
+                if key == Keys.U:
+                    self.updateList()
 
                 if key == Keys.Q:
                     exit(0)
