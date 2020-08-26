@@ -297,17 +297,12 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.setFilter('')
 
     def applyFilter(self):
-        if self.isFiltering:
-            self.__filteredBranches = list(filter(lambda item: self.__filter.lower() in item.head.lower(), self.__branches))
-        else:
-            self.__filteredBranches = self.__branches
-
+        self.__filteredBranches = list(filter(lambda item: self.__filter.lower() in item.head.lower(), self.__branches))
         self.sort()
 
     def toggleLocalOnly(self):
         self.__onlyLocal = not self.__onlyLocal
-        self.__branches = self.__repo.getBranches(self.__onlyLocal)
-        self.applyFilter()
+        self.updateList()
 
     def sort(self):
         self.__filteredBranches = sorted(self.__filteredBranches, key=lambda branch: branch.head, reverse=self.__sortAscending)
