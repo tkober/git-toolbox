@@ -1,11 +1,13 @@
 import argparse
 import os
 import curses
+import sys
 from utils.git import Repository
 from gupy.view import Label, HBox, BackgroundView, ListView, ListViewDelegate, ListViewDataSource, View
 from gupy.geometry import Padding
 from gupy.screen import ConstrainedBasedScreen
 from pathlib import Path
+from git import GitCommandError
 
 class Keys:
     UP = curses.KEY_UP
@@ -59,6 +61,7 @@ class Legends:
 class UI(ListViewDelegate, ListViewDataSource):
 
     def __init__(self, repo):
+        self.errorMessage = None
         self.__repo = repo
         self.__filter = ''
         self.__onlyLocal = True
@@ -189,6 +192,7 @@ class UI(ListViewDelegate, ListViewDataSource):
     def loop(self, stdscr):
 
         self.setupColors()
+        self.__loopRunning = True
 
         screen = ConstrainedBasedScreen(stdscr)
         self.titleElements = []
@@ -196,7 +200,7 @@ class UI(ListViewDelegate, ListViewDataSource):
         headerElements = self.addHeaderBox(screen)
         listView = self.addListView(screen)
 
-        while 1:
+        while self.__loopRunning:
             self.updateHeaderBox(screen, headerElements)
 
             screen.render()
@@ -230,6 +234,10 @@ class UI(ListViewDelegate, ListViewDataSource):
                     self.setFilter(self.getFilter() + character)
 
             else:
+                if key == Keys.ENTER:
+                    branch = self.__filteredBranches[listView.get_selected_row_index()]
+                    self.checkoutSelectedBranch(branch)
+
                 if key == Keys.F:
                     self.isFiltering = True
                     screen.remove_views(list(legendElements))
@@ -257,8 +265,19 @@ class UI(ListViewDelegate, ListViewDataSource):
                     self.fetchAll()
 
                 if key == Keys.Q:
-                    exit(0)
+                    self.__loopRunning = False
 
+    def checkoutSelectedBranch(self, branch):
+        if branch.reference == self.__repo.active_branch():
+            self.errorMessage = 'error: Branch \'{}\' is already your active branch.\n'.format(branch.reference)
+
+        else:
+            try:
+                branch.reference.checkout()
+            except GitCommandError as e:
+                self.errorMessage = e.stderr
+
+        self.__loopRunning = False
 
     def getFilter(self):
         return self.__filter
@@ -343,3 +362,6 @@ if __name__ == '__main__':
 
     ui = UI(repo)
     curses.wrapper(ui.loop)
+
+    if ui.errorMessage:
+        print(ui.errorMessage, file=sys.stderr)

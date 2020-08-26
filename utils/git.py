@@ -79,6 +79,7 @@ class Branch:
         super().__init__()
         self.head = reference.remote_head if isinstance(reference, RemoteReference) else reference.name
         self.remote = reference.remote_name if isinstance(reference, RemoteReference) else None
+        self.reference = reference
 
     def __repr__(self):
         return '<Branch head={}, remote={} >'.format(self.head, self.remote)
