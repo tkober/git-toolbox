@@ -39,6 +39,8 @@ class Colorpairs:
     ACTIVE = 8
     REMOTE = 9
     AHEAD_BEHIND = 10
+    CONFIRMATION = 11
+    CONFIRMATION_SELECTION = 12
 
 class Legends:
 
@@ -98,6 +100,9 @@ class UI(ListViewDelegate, ListViewDataSource):
         curses.init_pair(Colorpairs.ACTIVE, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(Colorpairs.REMOTE, curses.COLOR_YELLOW, curses.COLOR_BLACK)
         curses.init_pair(Colorpairs.AHEAD_BEHIND, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+
+        curses.init_pair(Colorpairs.CONFIRMATION, curses.COLOR_WHITE, curses.COLOR_RED)
+        curses.init_pair(Colorpairs.CONFIRMATION_SELECTION, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
     def addLegend(self, screen, legendItems):
         moreLabel = Label('')
@@ -196,6 +201,57 @@ class UI(ListViewDelegate, ListViewDataSource):
 
         return listView
 
+    def updateConfirmationLabels(self):
+        _, _, noLabel, yesLabel = self.confirmationViews;
+
+        noLabel.attributes.clear()
+        yesLabel.attributes.clear()
+
+        if self.confirmationYesSelected:
+            noLabel.attributes.append(curses.color_pair(Colorpairs.CONFIRMATION))
+            yesLabel.attributes.append(curses.color_pair(Colorpairs.CONFIRMATION_SELECTION))
+        else:
+            noLabel.attributes.append(curses.color_pair(Colorpairs.CONFIRMATION_SELECTION))
+            yesLabel.attributes.append(curses.color_pair(Colorpairs.CONFIRMATION))
+
+    def showConfirmation(self, screen, text):
+
+        background = BackgroundView(curses.color_pair(Colorpairs.CONFIRMATION))
+        screen.add_view(background, lambda w, h, v: (0, h - 1, w - 1, 1))
+
+        textLabel = Label(text)
+        textLabel.attributes.append(curses.color_pair(Colorpairs.CONFIRMATION))
+        textLabel.attributes.append(curses.A_BOLD)
+        screen.add_view(textLabel, lambda w, h, v:  (2, h-1, w-16, 1))
+
+        noLabel = Label('NO')
+        screen.add_view(noLabel, lambda w, h, v:   (w-14, h-1, 4, 1))
+
+        yesLabel = Label('YES')
+        screen.add_view(yesLabel, lambda w, h, v: (w-10, h-1, 5, 1))
+
+        self.confirmationViews = (background, textLabel, noLabel, yesLabel)
+        self.updateConfirmationLabels()
+
+
+    def hideConfirmation(self, screen):
+        self.confirmationActive = False
+        screen.remove_views(self.confirmationViews)
+
+    def applyComfirmedAction(self, screen, action, text):
+        self.confirmationActive = True
+        self.confirmationYesSelected = False
+        self.confirmationAction = action
+
+        self.showConfirmation(screen, text)
+
+    def performMerge(self, branch):
+        self.errorMessage = 'merge branch \'({}) {}\' into the current one'.format(branch.remote, branch.head)
+        self.stopLoop()
+
+    def merge(self, screen, branch):
+        self.applyComfirmedAction(screen, lambda: self.performMerge(branch), 'Do you want to merge the selected branch into your active?')
+
     def loop(self, stdscr):
 
         self.setupColors()
@@ -207,6 +263,10 @@ class UI(ListViewDelegate, ListViewDataSource):
         headerElements = self.addHeaderBox(screen)
         listView = self.addListView(screen)
 
+        self.confirmationActive = False
+        self.confirmationYesSelected = False
+        self.confirmationAction = None
+
         while self.__loopRunning:
             self.updateHeaderBox(screen, headerElements)
 
@@ -216,7 +276,21 @@ class UI(ListViewDelegate, ListViewDataSource):
             if key == curses.KEY_RESIZE:
                 continue
 
-            if self.isFiltering:
+            if self.confirmationActive:
+                if key == Keys.LEFT:
+                    self.confirmationYesSelected = False
+                    self.updateConfirmationLabels()
+
+                elif key == Keys.RIGHT:
+                    self.confirmationYesSelected = True
+                    self.updateConfirmationLabels()
+
+                elif key == Keys.ENTER:
+                    self.hideConfirmation(screen)
+                    if self.confirmationYesSelected and self.confirmationAction is not None:
+                        self.confirmationAction()
+
+            elif self.isFiltering:
                 if key == Keys.ESCAPE:
                     self.isFiltering = False
                     screen.remove_views(list(legendElements))
@@ -271,8 +345,11 @@ class UI(ListViewDelegate, ListViewDataSource):
                 if key == Keys.A:
                     self.fetchAll()
 
+                if key == Keys.M:
+                    self.merge(screen, self.__filteredBranches[listView.get_selected_row_index()])
+
                 if key == Keys.Q:
-                    self.__loopRunning = False
+                    self.stopLoop()
 
     def checkoutSelectedBranch(self, branch):
         if branch.reference == self.__repo.active_branch():
@@ -284,6 +361,9 @@ class UI(ListViewDelegate, ListViewDataSource):
             except GitCommandError as e:
                 self.errorMessage = e.stderr
 
+        self.stopLoop()
+
+    def stopLoop(self):
         self.__loopRunning = False
 
     def getFilter(self):
