@@ -77,7 +77,8 @@ class UI(ListViewDelegate, ListViewDataSource):
     def updateList(self):
         self.__branches = self.__repo.getBranches(self.__onlyLocal)
         self.__filteredBranches = self.__branches
-        self.__maxRemoteNameLength = max([len(remote.name) for remote in self.__repo.remotes()])
+        remotes = self.__repo.remotes()
+        self.__maxRemoteNameLength = max([len(remote.name) for remote in remotes]) if len(remotes) else 0
         self.sort()
         self.applyFilter()
 
