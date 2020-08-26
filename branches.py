@@ -38,6 +38,7 @@ class Colorpairs:
     PATTERN = 7
     ACTIVE = 8
     REMOTE = 9
+    AHEAD_BEHIND = 10
 
 class Legends:
 
@@ -96,6 +97,7 @@ class UI(ListViewDelegate, ListViewDataSource):
 
         curses.init_pair(Colorpairs.ACTIVE, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(Colorpairs.REMOTE, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+        curses.init_pair(Colorpairs.AHEAD_BEHIND, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
 
     def addLegend(self, screen, legendItems):
         moreLabel = Label('')
@@ -333,6 +335,15 @@ class UI(ListViewDelegate, ListViewDataSource):
 
         if isCheckedOut:
             headLabel.attributes.append(curses.color_pair(Colorpairs.ACTIVE))
+
+        if not self.__onlyLocal and (data.commitsAhead or data.commitsBehind):
+            aheadText = '↓·{}'.format(data.commitsAhead) if data.commitsAhead else ''
+            behindText = '↑·{}'.format(data.commitsBehind) if data.commitsBehind else ''
+
+            aheadBehindLabel = Label(aheadText + behindText)
+            aheadBehindLabel.attributes.append(curses.color_pair(Colorpairs.AHEAD_BEHIND))
+            aheadBehindLabel.attributes.append(curses.A_BOLD)
+            rowHBox.add_view(aheadBehindLabel, Padding(2, 0, 0, 0))
 
         result = rowHBox
         if is_selected:
