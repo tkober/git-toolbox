@@ -36,6 +36,8 @@ class Colorpairs:
     FILTER_CRITERIA = 5
     FILTER_CRITERIA_EDITING = 6
     PATTERN = 7
+    ACTIVE = 8
+    REMOTE = 9
 
 class Legends:
 
@@ -91,6 +93,9 @@ class UI(ListViewDelegate, ListViewDataSource):
         curses.init_pair(Colorpairs.FILTER_CRITERIA_EDITING, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
         curses.init_pair(Colorpairs.HEADER_TEXT, curses.COLOR_BLACK, curses.COLOR_WHITE)
         curses.init_pair(Colorpairs.PATTERN, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
+
+        curses.init_pair(Colorpairs.ACTIVE, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(Colorpairs.REMOTE, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 
     def addLegend(self, screen, legendItems):
         moreLabel = Label('')
@@ -318,10 +323,16 @@ class UI(ListViewDelegate, ListViewDataSource):
             remoteLabel = Label(remoteName.ljust(length))
             rowHBox.add_view(remoteLabel, Padding(2, 0, 0, 0))
 
+            remoteLabel.attributes.append(curses.color_pair(Colorpairs.REMOTE))
+            remoteLabel.attributes.append(curses.A_BOLD)
+
         isCheckedOut = data.head == self.__repo.active_branch_name() and not data.remote
         checkedOutPrefix = '*' if isCheckedOut else ' '
         headLabel = Label(checkedOutPrefix+data.head)
         rowHBox.add_view(headLabel, Padding(2, 0, 0, 0))
+
+        if isCheckedOut:
+            headLabel.attributes.append(curses.color_pair(Colorpairs.ACTIVE))
 
         result = rowHBox
         if is_selected:
