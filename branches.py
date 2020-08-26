@@ -2,7 +2,7 @@ import argparse
 import os
 import curses
 from utils.git import Repository
-from gupy.view import Label, HBox, BackgroundView
+from gupy.view import Label, HBox, BackgroundView, ListView, ListViewDelegate, ListViewDataSource, View
 from gupy.geometry import Padding
 from gupy.screen import ConstrainedBasedScreen
 from pathlib import Path
@@ -20,6 +20,8 @@ class Keys:
     F = ord('f')
     Q = ord('q')
     C = ord('c')
+    R = ord('r')
+    S = ord('s')
 
 class Colorpairs:
     KEY = 1
@@ -38,6 +40,7 @@ class Legends:
         ('[DOWN]', ' Scroll down '),
         ('[M]', ' Merge '),
         ('[R]', ' Toggle remote branches '),
+        ('[S]', ' Toggle order '),
         ('[F]', ' Filter '),
         ('[C]', ' Clear Filter '),
         ('[Q]', ' Quit ')
@@ -48,11 +51,17 @@ class Legends:
         ('[ESC]', ' Quit and clear Filter ')
     ]
 
-class UI():
+class UI(ListViewDelegate, ListViewDataSource):
 
     def __init__(self, repo):
         self.__repo = repo
         self.__filter = ''
+        self.__onlyLocal = True
+        self.__branches = self.__repo.getBranches(self.__onlyLocal)
+        self.__filteredBranches = self.__branches
+        self.__maxRemoteNameLength = max([len(remote.name) for remote in self.__repo.remotes()])
+        self.__sortAscending = False
+        self.sort()
 
     def setupColors(self):
         curses.curs_set(0)
@@ -157,6 +166,12 @@ class UI():
             screen.remove_views(self.titleElements)
             self.titleElements = []
 
+    def addListView(self, screen):
+        listView = ListView(self, self)
+        screen.add_view(listView, lambda w, h, v: (0, 1, w, h-2))
+
+        return listView
+
     def loop(self, stdscr):
 
         self.setupColors()
@@ -165,7 +180,7 @@ class UI():
         self.titleElements = []
         legendElements = self.addLegend(screen, Legends.MAIN)
         headerElements = self.addHeaderBox(screen)
-        #listView = self.addListView(screen)
+        listView = self.addListView(screen)
 
         self.isFiltering = False
 
@@ -208,6 +223,21 @@ class UI():
                     screen.remove_views(list(legendElements))
                     legendElements = self.addLegend(screen, Legends.FILTER)
 
+                if key == Keys.UP:
+                    listView.select_previous()
+
+                if key == Keys.DOWN:
+                    listView.select_next()
+
+                if key == Keys.C:
+                    self.clearFilter()
+
+                if key == Keys.R:
+                    self.toggleLocalOnly()
+
+                if key == Keys.S:
+                    self.toggleSortOrder()
+
                 if key == Keys.Q:
                     exit(0)
 
@@ -223,7 +253,53 @@ class UI():
         self.setFilter('')
 
     def applyFilter(self):
-        pass
+        if self.isFiltering:
+            pass
+        else:
+            self.__filteredBranches = self.__branches
+
+        self.sort()
+
+    def toggleLocalOnly(self):
+        self.__onlyLocal = not self.__onlyLocal
+        self.__branches = self.__repo.getBranches(self.__onlyLocal)
+        self.applyFilter()
+
+    def sort(self):
+        self.__filteredBranches = sorted(self.__filteredBranches, key=lambda branch: branch.head, reverse=self.__sortAscending)
+
+    def toggleSortOrder(self):
+        self.__sortAscending = not self.__sortAscending
+        self.sort()
+
+    def build_row(self, i, data, is_selected, width) -> View:
+        rowHBox = HBox()
+
+        if not self.__onlyLocal:
+            remoteName = '[{}]'.format(data.remote) if data.remote else ''
+            length = self.__maxRemoteNameLength+2
+            remoteLabel = Label(remoteName.ljust(length))
+            rowHBox.add_view(remoteLabel, Padding(2, 0, 0, 0))
+
+        isCheckedOut = data.head == self.__repo.active_branch_name() and not data.remote
+        checkedOutPrefix = '*' if isCheckedOut else ' '
+        headLabel = Label(checkedOutPrefix+data.head)
+        rowHBox.add_view(headLabel, Padding(2, 0, 0, 0))
+
+        result = rowHBox
+        if is_selected:
+            result = BackgroundView(curses.color_pair(Colorpairs.SELECTED))
+            result.add_view(rowHBox)
+            for label in rowHBox.get_elements():
+                label.attributes.append(curses.color_pair(Colorpairs.SELECTED))
+
+        return result
+
+    def number_of_rows(self) -> int:
+        return len(self.__filteredBranches)
+
+    def get_data(self, i) -> object:
+        return self.__filteredBranches[i]
 
 
 def parseArguments():

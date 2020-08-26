@@ -66,11 +66,14 @@ class Repository:
 
         return [ Branch(ref) for ref in refs ]
 
+    def remotes(self):
+        return self.repo.remotes
+
 class Branch:
 
     def __init__(self, reference):
         super().__init__()
-        self.head = reference.remote_head if isinstance(reference, RemoteReference) else reference.__repr__()
+        self.head = reference.remote_head if isinstance(reference, RemoteReference) else reference.name
         self.remote = reference.remote_name if isinstance(reference, RemoteReference) else None
 
     def __repr__(self):
