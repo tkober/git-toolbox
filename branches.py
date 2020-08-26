@@ -2,6 +2,7 @@ import argparse
 import os
 import curses
 import sys
+import subprocess
 from utils.git import Repository
 from gupy.view import Label, HBox, BackgroundView, ListView, ListViewDelegate, ListViewDataSource, View
 from gupy.geometry import Padding
@@ -247,7 +248,22 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.showConfirmation(screen, text)
 
     def performMerge(self, branch):
-        self.errorMessage = 'merge branch \'({}) {}\' into the current one'.format(branch.remote, branch.head)
+        branchName = '{}/{}'.format(branch.remote, branch.head) if branch.remote else branch.head
+        activeBranchName = self.__repo.active_branch_name()
+
+        if branch.head == activeBranchName:
+
+            if branch.remote:
+                self.errorMessage = 'error: Command rejected. Merging remote branch \'{}\' into its local counterpart is prohibited.\n' \
+                                    '\n'.format(branchName)
+            else:
+                self.errorMessage = 'error: Command rejected. Merging your local branch \'{}\' into itself is prohibited.'.format(branchName)
+
+            self.stopLoop()
+            return
+
+        command = 'cd {} && git merge {}'.format(self.__repo.getDirectory(), branchName)
+        subprocess.Popen(command, shell=True, stdout=sys.stdout, stderr=sys.stderr)
         self.stopLoop()
 
     def merge(self, screen, branch):
