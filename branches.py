@@ -233,7 +233,7 @@ class UI(ListViewDelegate, ListViewDataSource):
                 elif key == Keys.BACKSPACE:
                     self.setFilter(self.getFilter()[:-1])
 
-                elif key in [Keys.LEFT, Keys.RIGHT]:
+                elif key in [Keys.LEFT, Keys.RIGHT, Keys.UP, Keys.DOWN]:
                     pass
 
                 else:
@@ -298,7 +298,7 @@ class UI(ListViewDelegate, ListViewDataSource):
 
     def applyFilter(self):
         if self.isFiltering:
-            pass
+            self.__filteredBranches = list(filter(lambda item: self.__filter.lower() in item.head.lower(), self.__branches))
         else:
             self.__filteredBranches = self.__branches
 
