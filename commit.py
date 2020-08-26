@@ -68,7 +68,7 @@ if __name__ == '__main__':
         if ticket in ['master', 'develop']:
             commitSuccessful = commit(noVerify=args.no_verify)
         else:
-            commitSuccessful = commit('{}'.format(ticket), args.no_verify)
+            commitSuccessful = commit('{} '.format(ticket), args.no_verify)
 
 
     if commitSuccessful and args.push:
