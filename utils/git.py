@@ -69,6 +69,10 @@ class Repository:
     def remotes(self):
         return self.repo.remotes
 
+    def fetch(self):
+        for remote in self.repo.remotes:
+            remote.fetch()
+
 class Branch:
 
     def __init__(self, reference):

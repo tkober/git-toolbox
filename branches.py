@@ -73,6 +73,10 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.sort()
         self.applyFilter()
 
+    def fetchAll(self):
+        self.__repo.fetch()
+        self.updateList()
+
     def setupColors(self):
         curses.curs_set(0)
 
@@ -248,6 +252,9 @@ class UI(ListViewDelegate, ListViewDataSource):
 
                 if key == Keys.U:
                     self.updateList()
+
+                if key == Keys.A:
+                    self.fetchAll()
 
                 if key == Keys.Q:
                     exit(0)
