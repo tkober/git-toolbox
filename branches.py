@@ -10,6 +10,15 @@ from gupy.screen import ConstrainedBasedScreen
 from pathlib import Path
 from git import GitCommandError
 
+PROG_NAME = 'git-branches'
+
+def shortenPath(path):
+    try:
+        relative = path.relative_to(Path.home())
+        return '~/' + str(relative)
+    except ValueError:
+        return path
+
 class Keys:
     UP = curses.KEY_UP
     DOWN = curses.KEY_DOWN
@@ -160,16 +169,10 @@ class UI(ListViewDelegate, ListViewDataSource):
         return (filterBackground, filterHBox, filterCriteriaLabel, filterLabel)
 
     def addTitle(self, screen):
-
-        path = Path(self.__repo.getDirectory())
-        try:
-            relative = path.relative_to(Path.home())
-            title = '~/' + str(relative)
-        except ValueError:
-            pass
-
         title_hbox = HBox()
 
+        path = Path(self.__repo.getDirectory())
+        title = shortenPath(path)
         directoryLabel = Label(title)
         directoryLabel.attributes.append(curses.color_pair(Colorpairs.HEADER_TEXT))
         directoryLabel.attributes.append(curses.A_BOLD)
@@ -503,6 +506,12 @@ if __name__ == '__main__':
     else:
         repositoryDirectory = os.getcwd()
     repo = Repository(repositoryDirectory)
+
+    if repo.hasDetachedHead():
+        shortPath = shortenPath(Path(repositoryDirectory))
+        message = 'The git repository \'{}\' has a detached head. Working with detached heads is not supported.'.format(shortPath)
+        print(message, file=sys.stderr)
+        exit(-1)
 
     ui = UI(repo, args.keep_open)
     curses.wrapper(ui.loop)

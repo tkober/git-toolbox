@@ -77,6 +77,9 @@ class Repository:
         for remote in self.repo.remotes:
             remote.fetch()
 
+    def hasDetachedHead(self):
+        return self.repo.head.is_detached
+
 class Branch:
 
     def __init__(self, reference, repo):
