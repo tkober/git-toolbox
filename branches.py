@@ -80,7 +80,7 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.refreshList()
 
     def refreshList(self):
-        self.__branches = self.__repo.getBranches(self.__onlyLocal)
+        self.__branches = self.__repo.getBranches(local=self.__onlyLocal, remotes=not self.__onlyLocal)
         self.__filteredBranches = self.__branches
         remotes = self.__repo.remotes()
         self.__maxRemoteNameLength = max([len(remote.name) for remote in remotes]) if len(remotes) else 0
