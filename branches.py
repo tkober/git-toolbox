@@ -40,7 +40,7 @@ class Colorpairs:
     PATTERN = 7
     ACTIVE = 8
     REMOTE = 9
-    AHEAD_BEHIND = 10
+    DIFF = 10
     CONFIRMATION = 11
     CONFIRMATION_SELECTION = 12
     VIEW = 13
@@ -105,7 +105,7 @@ class UI(ListViewDelegate, ListViewDataSource):
 
         curses.init_pair(Colorpairs.ACTIVE, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(Colorpairs.REMOTE, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-        curses.init_pair(Colorpairs.AHEAD_BEHIND, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+        curses.init_pair(Colorpairs.DIFF, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
 
         curses.init_pair(Colorpairs.CONFIRMATION, curses.COLOR_WHITE, curses.COLOR_RED)
         curses.init_pair(Colorpairs.CONFIRMATION_SELECTION, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -426,7 +426,7 @@ class UI(ListViewDelegate, ListViewDataSource):
     def build_row(self, i, data, is_selected, width) -> View:
         rowHBox = HBox()
 
-        if not self.__onlyLocal:
+        if data.remote:
             remoteName = '[{}]'.format(data.remote) if data.remote else ''
             length = self.__maxRemoteNameLength+2
             remoteLabel = Label(remoteName.ljust(length))
@@ -443,14 +443,11 @@ class UI(ListViewDelegate, ListViewDataSource):
         if isCheckedOut:
             headLabel.attributes.append(curses.color_pair(Colorpairs.ACTIVE))
 
-        if not self.__onlyLocal and (data.commitsAhead or data.commitsBehind):
-            aheadText = '↓·{}'.format(data.commitsAhead) if data.commitsAhead else ''
-            behindText = '↑·{}'.format(data.commitsBehind) if data.commitsBehind else ''
-
-            aheadBehindLabel = Label(aheadText + behindText)
-            aheadBehindLabel.attributes.append(curses.color_pair(Colorpairs.AHEAD_BEHIND))
-            aheadBehindLabel.attributes.append(curses.A_BOLD)
-            rowHBox.add_view(aheadBehindLabel, Padding(2, 0, 0, 0))
+        if not data.remote:
+            diffLabel = Label(data.diff)
+            diffLabel.attributes.append(curses.color_pair(Colorpairs.DIFF))
+            diffLabel.attributes.append(curses.A_BOLD)
+            rowHBox.add_view(diffLabel, Padding(2, 0, 0, 0))
 
         result = rowHBox
         if is_selected:
@@ -494,10 +491,6 @@ if __name__ == '__main__':
     else:
         repositoryDirectory = os.getcwd()
     repo = Repository(repositoryDirectory)
-
-    branches = repo.repo.branches
-    for branch in branches:
-        print('{} -> {}'.format(branch, branch.tracking_branch()))
 
     ui = UI(repo, args.keep_open)
     curses.wrapper(ui.loop)
