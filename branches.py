@@ -44,6 +44,7 @@ class Colorpairs:
     CONFIRMATION = 11
     CONFIRMATION_SELECTION = 12
     VIEW = 13
+    UPSTREAM = 14
 
 class Legends:
 
@@ -77,6 +78,7 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.__sortAscending = False
         self.__keepOpen = keepOpen
         self.isFiltering = False
+        self.__showUpstreams = True
         self.refreshList()
 
     def refreshList(self):
@@ -106,11 +108,13 @@ class UI(ListViewDelegate, ListViewDataSource):
         curses.init_pair(Colorpairs.ACTIVE, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(Colorpairs.REMOTE, curses.COLOR_YELLOW, curses.COLOR_BLACK)
         curses.init_pair(Colorpairs.DIFF, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+        curses.init_pair(Colorpairs.UPSTREAM, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 
         curses.init_pair(Colorpairs.CONFIRMATION, curses.COLOR_WHITE, curses.COLOR_RED)
         curses.init_pair(Colorpairs.CONFIRMATION_SELECTION, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
         curses.init_pair(Colorpairs.VIEW, curses.COLOR_BLUE, curses.COLOR_WHITE)
+
 
     def addLegend(self, screen, legendItems):
         moreLabel = Label('')
@@ -380,6 +384,9 @@ class UI(ListViewDelegate, ListViewDataSource):
                 if key == Keys.Q:
                     self.stopLoop()
 
+                if key == Keys.U:
+                    self.__showUpstreams = not self.__showUpstreams
+
     def checkoutSelectedBranch(self, branch):
         if branch.reference == self.__repo.active_branch():
             self.errorMessage = 'error: Branch \'{}\' is already your active branch.\n'.format(branch.reference)
@@ -444,6 +451,11 @@ class UI(ListViewDelegate, ListViewDataSource):
             headLabel.attributes.append(curses.color_pair(Colorpairs.ACTIVE))
 
         if not data.remote:
+            if self.__showUpstreams:
+                upstreamLabel = Label('-> {}'.format(data.upstream))
+                upstreamLabel.attributes.append(curses.color_pair(Colorpairs.UPSTREAM))
+                rowHBox.add_view(upstreamLabel, Padding(1, 0, 0, 0))
+
             diffLabel = Label(data.diff)
             diffLabel.attributes.append(curses.color_pair(Colorpairs.DIFF))
             diffLabel.attributes.append(curses.A_BOLD)
