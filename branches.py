@@ -43,6 +43,7 @@ class Colorpairs:
     AHEAD_BEHIND = 10
     CONFIRMATION = 11
     CONFIRMATION_SELECTION = 12
+    VIEW = 13
 
 class Legends:
 
@@ -109,6 +110,8 @@ class UI(ListViewDelegate, ListViewDataSource):
         curses.init_pair(Colorpairs.CONFIRMATION, curses.COLOR_WHITE, curses.COLOR_RED)
         curses.init_pair(Colorpairs.CONFIRMATION_SELECTION, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
+        curses.init_pair(Colorpairs.VIEW, curses.COLOR_BLUE, curses.COLOR_WHITE)
+
     def addLegend(self, screen, legendItems):
         moreLabel = Label('')
 
@@ -161,21 +164,27 @@ class UI(ListViewDelegate, ListViewDataSource):
         except ValueError:
             pass
 
+        title_hbox = HBox()
+
         directoryLabel = Label(title)
         directoryLabel.attributes.append(curses.color_pair(Colorpairs.HEADER_TEXT))
         directoryLabel.attributes.append(curses.A_BOLD)
+        title_hbox.add_view(directoryLabel, Padding(0, 0, 0, 0))
 
         activeBranchLabel = Label('[' + self.__repo.active_branch_name() + ']')
         activeBranchLabel.attributes.append(curses.color_pair(Colorpairs.PATTERN))
         activeBranchLabel.attributes.append(curses.A_BOLD)
-
-        title_hbox = HBox()
-        title_hbox.add_view(directoryLabel, Padding(0, 0, 0, 0))
         title_hbox.add_view(activeBranchLabel, Padding(1, 0, 0, 0))
+
+        viewLabel = Label('({})'.format('local' if self.__onlyLocal else 'remotes'))
+        viewLabel.attributes.append(curses.color_pair(Colorpairs.VIEW))
+        viewLabel.attributes.append(curses.A_BOLD)
+        title_hbox.add_view(viewLabel, Padding(1, 0, 0, 0))
+
         screen.add_view(title_hbox, lambda w, h, v: (
         (w - v.required_size().width) // 2, 0, title_hbox.required_size().width + 1, 1))
 
-        return (title_hbox, directoryLabel, activeBranchLabel)
+        return (title_hbox, directoryLabel, activeBranchLabel, viewLabel)
 
     def updateHeaderBox(self, screen, filterElements):
         _, _, filterCriteriaLabel, filterLabel = filterElements
