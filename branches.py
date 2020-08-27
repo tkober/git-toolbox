@@ -342,7 +342,8 @@ class UI(ListViewDelegate, ListViewDataSource):
 
         while self.__loopRunning:
             self.updateHeaderBox(screen, headerElements)
-            self.updateLegend(screen)
+            if not self.confirmationActive:
+                self.updateLegend(screen)
 
             screen.render()
 
