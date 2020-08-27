@@ -28,6 +28,7 @@ class Keys:
     M = ord('m')
     U = ord('u')
     A = ord('a')
+    L = ord('l')
 
 class Colorpairs:
     KEY = 1
@@ -50,12 +51,13 @@ class Legends:
         ('[UP]', ' Scroll up '),
         ('[DOWN]', ' Scroll down '),
         ('[M]', ' Merge '),
-        ('[R]', ' Toggle remote branches '),
+        ('[L]', ' Toggle local/remote '),
         ('[S]', ' Toggle order '),
         ('[F]', ' Filter '),
         ('[C]', ' Clear Filter '),
-        ('[U]', ' Update list '),
+        ('[R]', ' Refresh '),
         ('[A]', ' Fetch all '),
+        ('[U]', ' Toggle upstreams '),
         ('[Q]', ' Quit ')
     ]
 
@@ -74,9 +76,9 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.__sortAscending = False
         self.__keepOpen = keepOpen
         self.isFiltering = False
-        self.updateList()
+        self.refreshList()
 
-    def updateList(self):
+    def refreshList(self):
         self.__branches = self.__repo.getBranches(self.__onlyLocal)
         self.__filteredBranches = self.__branches
         remotes = self.__repo.remotes()
@@ -86,7 +88,7 @@ class UI(ListViewDelegate, ListViewDataSource):
 
     def fetchAll(self):
         self.__repo.fetch()
-        self.updateList()
+        self.refreshList()
 
     def setupColors(self):
         curses.curs_set(0)
@@ -351,14 +353,14 @@ class UI(ListViewDelegate, ListViewDataSource):
                 if key == Keys.C:
                     self.clearFilter()
 
-                if key == Keys.R:
+                if key == Keys.L:
                     self.toggleLocalOnly()
 
                 if key == Keys.S:
                     self.toggleSortOrder()
 
-                if key == Keys.U:
-                    self.updateList()
+                if key == Keys.R:
+                    self.refreshList()
 
                 if key == Keys.A:
                     self.fetchAll()
@@ -380,7 +382,7 @@ class UI(ListViewDelegate, ListViewDataSource):
                 self.errorMessage = e.stderr
 
         if self.__keepOpen:
-            self.updateList()
+            self.refreshList()
         else:
             self.stopLoop()
 
@@ -403,7 +405,7 @@ class UI(ListViewDelegate, ListViewDataSource):
 
     def toggleLocalOnly(self):
         self.__onlyLocal = not self.__onlyLocal
-        self.updateList()
+        self.refreshList()
 
     def sort(self):
         self.__filteredBranches = sorted(self.__filteredBranches, key=lambda branch: branch.head, reverse=self.__sortAscending)
@@ -483,6 +485,10 @@ if __name__ == '__main__':
     else:
         repositoryDirectory = os.getcwd()
     repo = Repository(repositoryDirectory)
+
+    branches = repo.repo.branches
+    for branch in branches:
+        print('{} -> {}'.format(branch, branch.tracking_branch()))
 
     ui = UI(repo, args.keep_open)
     curses.wrapper(ui.loop)
