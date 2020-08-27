@@ -10,8 +10,6 @@ from gupy.screen import ConstrainedBasedScreen
 from pathlib import Path
 from git import GitCommandError
 
-PROG_NAME = 'git-branches'
-
 def shortenPath(path):
     try:
         relative = path.relative_to(Path.home())
