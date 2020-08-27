@@ -58,15 +58,17 @@ class Repository:
     def active_branch_name(self):
         return self.active_branch().name
 
-    def getBranches(self, onlyLocal=False):
-        checkedOutReferences = [ref.name for ref in self.repo.heads]
+    def getBranches(self, local=True, remotes=False):
+        refs = []
+        for ref in self.repo.refs:
+            if isinstance(ref, RemoteReference):
+                if remotes:
+                    refs.append(ref)
+            elif isinstance(ref, Head):
+                if local:
+                    refs.append(ref)
 
-        if onlyLocal:
-            refs = self.repo.heads
-        else:
-            refs = [ref for ref in self.repo.refs if isinstance(ref, RemoteReference) or isinstance(ref, Head)]
-
-        return [ Branch(ref, self.repo, checkedOutReferences) for ref in refs ]
+        return [ Branch(ref, self.repo) for ref in refs ]
 
     def remotes(self):
         return self.repo.remotes
@@ -77,23 +79,32 @@ class Repository:
 
 class Branch:
 
-    def __init__(self, reference, repo, checkedOutReferences):
+    def __init__(self, reference, repo):
         super().__init__()
         self.head = reference.remote_head if isinstance(reference, RemoteReference) else reference.name
         self.remote = reference.remote_name if isinstance(reference, RemoteReference) else None
         self.reference = reference
         self.commitsBehind = None
         self.commitsAhead = None
+        self.upstream = reference.tracking_branch()
 
-        if repo and self.remote and self.head in checkedOutReferences:
-            commitsBehind = repo.iter_commits('{}/{}..{}'.format(self.remote, self.head, self.head))
+        if self.upstream:
+            commitsBehind = repo.iter_commits('{}..{}'.format(self.head, self.upstream))
             self.commitsBehind = sum(1 for c in commitsBehind)
 
-            commitsAhead = repo.iter_commits('{}..{}/{}'.format(self.head, self.remote, self.head))
+            commitsAhead = repo.iter_commits('{}..{}'.format(self.upstream, self.head))
             self.commitsAhead = sum(1 for c in commitsAhead)
 
+        self.diff = ''
+        if self.commitsAhead:
+            self.diff += '↑·{}'.format(self.commitsAhead)
+
+        if self.commitsBehind:
+            self.diff += '↓·{}'.format(self.commitsBehind)
+
     def __repr__(self):
-        return '<Branch head={}, remote={} >'.format(self.head, self.remote)
+        diff = ', diff={}'.format(self.diff) if self.diff and len(self.diff) else ''
+        return '<Branch head={}, remote={}, upstream={}{} >'.format(self.head, self.remote, self.upstream, diff)
 
 
 class Stage(Repository):
