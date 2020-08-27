@@ -38,6 +38,7 @@ class Keys:
     U = ord('u')
     A = ord('a')
     L = ord('l')
+    T = ord('t')
 
 class Colorpairs:
     KEY = 1
@@ -58,9 +59,10 @@ class Colorpairs:
 class Legends:
 
     MAIN = [
-        ('[ENTER]', ' Checkout  '),
         ('[UP]', ' Scroll up '),
         ('[DOWN]', ' Scroll down '),
+        ('[ENTER]', ' Checkout  '),
+        ('[T]', ' Track  '),
         ('[M]', ' Merge '),
         ('[L]', ' Toggle local/remote '),
         ('[S]', ' Toggle order '),
@@ -351,9 +353,10 @@ class UI(ListViewDelegate, ListViewDataSource):
                     self.setFilter(self.getFilter() + character)
 
             else:
+                branch = self.__filteredBranches[listView.get_selected_row_index()]
+
                 if key == Keys.ENTER:
-                    branch = self.__filteredBranches[listView.get_selected_row_index()]
-                    self.checkoutSelectedBranch(branch)
+                    self.checkoutSelectedBranch(screen, branch)
 
                 if key == Keys.F:
                     self.isFiltering = True
@@ -365,6 +368,10 @@ class UI(ListViewDelegate, ListViewDataSource):
 
                 if key == Keys.DOWN:
                     listView.select_next()
+
+                if key == Keys.T:
+                    if branch.remote:
+                        self.trackRemoteBranch(branch)
 
                 if key == Keys.C:
                     self.clearFilter()
@@ -382,7 +389,7 @@ class UI(ListViewDelegate, ListViewDataSource):
                     self.fetchAll()
 
                 if key == Keys.M:
-                    self.merge(screen, self.__filteredBranches[listView.get_selected_row_index()])
+                    self.merge(screen, branch)
 
                 if key == Keys.Q:
                     self.stopLoop()
@@ -390,15 +397,35 @@ class UI(ListViewDelegate, ListViewDataSource):
                 if key == Keys.U:
                     self.__showUpstreams = not self.__showUpstreams
 
-    def checkoutSelectedBranch(self, branch):
+    def checkoutSelectedBranch(self, screen, branch):
         if branch.reference == self.__repo.active_branch():
             self.errorMessage = 'error: Branch \'{}\' is already your active branch.\n'.format(branch.reference)
 
+        elif branch.remote:
+            text = 'Checking out a remote branch will result in a detached head. Continue?'
+            self.applyComfirmedAction(screen, lambda: self.checkoutBranch(branch), text)
         else:
-            try:
-                branch.reference.checkout()
-            except GitCommandError as e:
-                self.errorMessage = e.stderr
+            self.checkoutBranch(branch)
+
+    def checkoutBranch(self, branch):
+        try:
+            branch.reference.checkout()
+        except GitCommandError as e:
+            self.errorMessage = e.stderr
+
+        if self.__keepOpen:
+            self.refreshList()
+        else:
+            self.stopLoop()
+
+    def trackRemoteBranch(self, branch):
+        if not branch.remote:
+            self.errorMessage = 'Internal error: Local branch should not be checked out with --track'
+            self.stopLoop()
+            return
+
+        command = 'cd {} && git checkout --track {}/{}'.format(self.__repo.getDirectory(), branch.remote, branch.head)
+        subprocess.Popen(command, shell=True, stdout=sys.stdout, stderr=sys.stderr)
 
         if self.__keepOpen:
             self.refreshList()
