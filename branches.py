@@ -58,21 +58,45 @@ class Colorpairs:
 
 class Legends:
 
-    MAIN = [
-        ('[UP]', ' Scroll up '),
-        ('[DOWN]', ' Scroll down '),
-        ('[ENTER]', ' Checkout  '),
-        ('[T]', ' Track  '),
-        ('[M]', ' Merge '),
-        ('[L]', ' Toggle local/remote '),
-        ('[S]', ' Toggle order '),
-        ('[F]', ' Filter '),
-        ('[C]', ' Clear Filter '),
-        ('[R]', ' Refresh '),
-        ('[A]', ' Fetch all '),
-        ('[U]', ' Toggle upstreams '),
-        ('[Q]', ' Quit ')
-    ]
+    @staticmethod
+    def main(onlyLocal, hasFilter, upstreamsVisible, sordedDescending):
+        result = [
+            ('[UP]', ' Scroll up '),
+            ('[DOWN]', ' Scroll down '),
+            ('[ENTER]', ' Checkout  '),
+        ]
+
+        if not onlyLocal:
+            result.append(('[T]', ' Track  '))
+
+        result.append(('[M]', ' Merge '))
+
+        if onlyLocal:
+            result.append(('[L]', ' Show locals '))
+        else:
+            result.append(('[L]', ' Show remotes '))
+
+        if sordedDescending:
+            result.append(('[S]', ' Sort ascending '))
+        else:
+            result.append(('[S]', ' Sort descending '))
+
+        result.append(('[F]', ' Filter '))
+        if hasFilter:
+            result.append(('[C]', ' Clear Filter '))
+
+        result.append(('[R]', ' Refresh '))
+        result.append(('[A]', ' Fetch all '))
+
+        if onlyLocal:
+            if upstreamsVisible:
+                result.append(('[U]', ' Hide upstreams '))
+            else:
+                result.append(('[U]', ' Show upstreams '))
+
+        result.append(('[Q]', ' Quit '))
+
+        return result
 
     FILTER = [
         ('[ENTER]', ' Quit and save Filter '),
@@ -86,7 +110,7 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.__repo = repo
         self.__filter = ''
         self.__onlyLocal = True
-        self.__sortAscending = False
+        self.__sortDescending = False
         self.__keepOpen = keepOpen
         self.isFiltering = False
         self.__showUpstreams = True
@@ -290,6 +314,17 @@ class UI(ListViewDelegate, ListViewDataSource):
     def merge(self, screen, branch):
         self.applyComfirmedAction(screen, lambda: self.performMerge(branch), 'Do you want to merge the selected branch into your active?')
 
+    def updateLegend(self, screen):
+        screen.remove_views(self.legendElements)
+
+        if self.isFiltering:
+            legend = Legends.FILTER
+        else:
+            hasFilter = self.__filter and len(self.__filter)
+            legend = Legends.main(self.__onlyLocal, hasFilter, self.__showUpstreams, self.__sortDescending)
+
+        self.legendElements = self.addLegend(screen, legend)
+
     def loop(self, stdscr):
 
         self.setupColors()
@@ -297,7 +332,7 @@ class UI(ListViewDelegate, ListViewDataSource):
 
         screen = ConstrainedBasedScreen(stdscr)
         self.titleElements = []
-        legendElements = self.addLegend(screen, Legends.MAIN)
+        self.legendElements = []
         headerElements = self.addHeaderBox(screen)
         listView = self.addListView(screen)
 
@@ -307,6 +342,7 @@ class UI(ListViewDelegate, ListViewDataSource):
 
         while self.__loopRunning:
             self.updateHeaderBox(screen, headerElements)
+            self.updateLegend(screen)
 
             screen.render()
 
@@ -331,14 +367,10 @@ class UI(ListViewDelegate, ListViewDataSource):
             elif self.isFiltering:
                 if key == Keys.ESCAPE:
                     self.isFiltering = False
-                    screen.remove_views(list(legendElements))
-                    legendElements = self.addLegend(screen, Legends.MAIN)
                     self.setFilter('')
 
                 elif key == Keys.ENTER:
                     self.isFiltering = False
-                    screen.remove_views(list(legendElements))
-                    legendElements = self.addLegend(screen, Legends.MAIN)
                     if len(self.getFilter()) == 0:
                         self.clearFilter()
 
@@ -360,8 +392,6 @@ class UI(ListViewDelegate, ListViewDataSource):
 
                 if key == Keys.F:
                     self.isFiltering = True
-                    screen.remove_views(list(legendElements))
-                    legendElements = self.addLegend(screen, Legends.FILTER)
 
                 if key == Keys.UP:
                     listView.select_previous()
@@ -454,10 +484,10 @@ class UI(ListViewDelegate, ListViewDataSource):
         self.refreshList()
 
     def sort(self):
-        self.__filteredBranches = sorted(self.__filteredBranches, key=lambda branch: branch.head, reverse=self.__sortAscending)
+        self.__filteredBranches = sorted(self.__filteredBranches, key=lambda branch: branch.head, reverse=self.__sortDescending)
 
     def toggleSortOrder(self):
-        self.__sortAscending = not self.__sortAscending
+        self.__sortDescending = not self.__sortDescending
         self.sort()
 
     def build_row(self, i, data, is_selected, width) -> View:
