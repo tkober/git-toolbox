@@ -3,6 +3,7 @@ import os
 import curses
 import sys
 import subprocess
+import time
 from utils.git import Repository
 from gupy.view import Label, HBox, BackgroundView, ListView, ListViewDelegate, ListViewDataSource, View
 from gupy.geometry import Padding
@@ -37,6 +38,7 @@ class Keys:
     A = ord('a')
     L = ord('l')
     T = ord('t')
+    D = ord('d')
 
 class Colorpairs:
     KEY = 1
@@ -68,6 +70,9 @@ class Legends:
             result.append(('[T]', ' Track  '))
 
         result.append(('[M]', ' Merge '))
+
+        if onlyLocal:
+            result.append(('[D]', ' Delete '))
 
         if onlyLocal:
             result.append(('[L]', ' Show locals '))
@@ -323,6 +328,23 @@ class UI(ListViewDelegate, ListViewDataSource):
 
         self.legendElements = self.addLegend(screen, legend)
 
+    def deleteBranchConfirmed(self, screen, branch):
+        text = 'Do you really want to delete the selected branch?'
+        self.applyComfirmedAction(screen, lambda: self.deleteLocalBranch(branch), text)
+
+    def deleteLocalBranch(self, branch):
+        if branch.remote:
+            self.errorMessage = 'Internal error: Remote branch should not be deleted'
+            self.stopLoop()
+            return
+
+        try:
+            self.errorMessage = self.__repo.repo.git.branch('-d', branch.head)
+            self.refreshList()
+        except GitCommandError as e:
+            self.errorMessage = e.stderr
+            self.stopLoop()
+
     def loop(self, stdscr):
 
         self.setupColors()
@@ -422,6 +444,10 @@ class UI(ListViewDelegate, ListViewDataSource):
 
                 if key == Keys.Q:
                     self.stopLoop()
+
+                if key == Keys.D:
+                    if not branch.remote:
+                        self.deleteBranchConfirmed(screen, branch)
 
                 if key == Keys.U:
                     self.__showUpstreams = not self.__showUpstreams
