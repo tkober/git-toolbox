@@ -75,9 +75,9 @@ class Legends:
             result.append(('[D]', ' Delete '))
 
         if onlyLocal:
-            result.append(('[L]', ' Show locals '))
-        else:
             result.append(('[L]', ' Show remotes '))
+        else:
+            result.append(('[L]', ' Show locals '))
 
         if sordedDescending:
             result.append(('[S]', ' Sort ascending '))
