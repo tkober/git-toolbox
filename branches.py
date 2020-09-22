@@ -406,9 +406,10 @@ class UI(ListViewDelegate, ListViewDataSource):
                     self.setFilter(self.getFilter() + character)
 
             else:
-                branch = self.__filteredBranches[listView.get_selected_row_index()]
+                selectedIndex = listView.get_selected_row_index()
+                branch = self.__filteredBranches[selectedIndex] if selectedIndex < len(self.__filteredBranches) else None
 
-                if key == Keys.ENTER:
+                if key == Keys.ENTER and branch:
                     self.checkoutSelectedBranch(screen, branch)
 
                 if key == Keys.F:
@@ -420,7 +421,7 @@ class UI(ListViewDelegate, ListViewDataSource):
                 if key == Keys.DOWN:
                     listView.select_next()
 
-                if key == Keys.T:
+                if key == Keys.T and branch:
                     if branch.remote:
                         self.trackRemoteBranch(branch)
 
@@ -439,13 +440,13 @@ class UI(ListViewDelegate, ListViewDataSource):
                 if key == Keys.A:
                     self.fetchAll()
 
-                if key == Keys.M:
+                if key == Keys.M and branch:
                     self.merge(screen, branch)
 
                 if key == Keys.Q:
                     self.stopLoop()
 
-                if key == Keys.D:
+                if key == Keys.D and branch:
                     if not branch.remote:
                         self.deleteBranchConfirmed(screen, branch)
 
