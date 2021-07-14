@@ -65,7 +65,7 @@ if __name__ == '__main__':
         name = stage.active_branch_name().split('/')[-1]
         ticket = '-'.join(name.split('-')[:2])
 
-        if ticket in ['master', 'develop']:
+        if ticket in ['master', 'develop', 'main']:
             commitSuccessful = commit(noVerify=args.no_verify)
         else:
             commitSuccessful = commit('{} '.format(ticket), args.no_verify)
