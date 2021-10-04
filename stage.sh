@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ENV_NAME="git-toolbox-env"
+ENV_NAME="/opt/anaconda3/envs/git-toolbox-env"
 
 if [ ! -z "$1" ]
   then
