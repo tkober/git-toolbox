@@ -32,8 +32,13 @@ if [ -x "$(command -v conda)" ]; then
 fi
 
 echo "function $STAGE_FUNCTION_NAME { $BASEDIR/$STAGE_RUN_SCRIPT \$@; }" >> ~/.bash_profile
+echo "function $STAGE_FUNCTION_NAME { $BASEDIR/$STAGE_RUN_SCRIPT \$@; }" >> ~/.zshrc
+
 echo "function $COMMIT_FUNCTION_NAME { $BASEDIR/$COMMIT_RUN_SCRIPT \$@; }" >> ~/.bash_profile
+echo "function $COMMIT_FUNCTION_NAME { $BASEDIR/$COMMIT_RUN_SCRIPT \$@; }" >> ~/.zshrc
+
 echo "function $BRANCHES_FUNCTION_NAME { $BASEDIR/$BRANCHES_RUN_SCRIPT \$@; }" >> ~/.bash_profile
+echo "function $BRANCHES_FUNCTION_NAME { $BASEDIR/$BRANCHES_RUN_SCRIPT \$@; }" >> ~/.zshrc
 
 
 clear
@@ -41,5 +46,6 @@ tput setaf 2; tput bold; echo "Installation successful!"; tput sgr0;
 echo ""
 echo "Make all commands available on your shell by running:"
 echo ""
-tput setaf 6; echo "    source ~/.bash_profile"; tput sgr0;
+tput setaf 6; echo "    source ~/.bash_profile  (if you are using BASH)"; tput sgr0;
+tput setaf 6; echo "    source ~/.zshrc         (if you are using BASH)"; tput sgr0;
 echo ""
